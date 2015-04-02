@@ -5,13 +5,20 @@
 import sys
 import os
 import traceback
-import goose
-print(goose.__file__)
-from goose.utils.config import *
-from goose.MainWindow import MainWindow
+from goose import *
 from PyQt4 import Qt, QtCore, QtGui
 from PyQt4.QtGui import *
 
+GOOSE_ROOT_DIRECTORY    = os.path.expanduser("~/.goose/")
+GOOSE_LOG               = "logs"
+GOOSE_VERSION           = goose.VERSION
+GOOSE_RUN_TIME          = strftime("%Y%m%d%H%M%S%Z", localtime())
+
+GOOSE_LOG_DIRECTORY = os.path.join( GOOSE_ROOT_DIRECTORY
+                                  , GOOSE_VERSION
+                                  , GOOSE_LOG
+                                  , GOOSE_RUN_TIME
+                                  )
 
 def excepthook(exception_class, exception, tb):
     CRITICAL('{0}: {1}'.format(exception_class.__name__, exception))
@@ -20,11 +27,11 @@ def excepthook(exception_class, exception, tb):
 
 def main():
     sys.excepthook = excepthook
-    if not os.path.exists(MOOSE_LOG_DIRECTORY):
-        os.makedirs(MOOSE_LOG_DIRECTORY)
+    if not os.path.exists(GOOSE_LOG_DIRECTORY):
+        os.makedirs(GOOSE_LOG_DIRECTORY)
     application = QApplication(sys.argv)
-    application.setWindowIcon(QIcon(APPLICATION_ICON_PATH))
-    window =  MainWindow(application, sys.argv[1:])
+    application.setWindowIcon(QIcon(goose.APPLICATION_ICON_PATH))
+    window =  MainWindow(application, GOOSE_LOG_DIRECTORY ,sys.argv[1:])
     window.setWindowState(QtCore.Qt.WindowMaximized)
     window.show()
     sys.exit(application.exec_())

@@ -1,10 +1,9 @@
-displayed_model =
-
 class Model(object)
 
     def __init__(self, moose, root_element):
         self.moose          = moose
         self.root_element   = root_element
+        self.model_info     = moose.element(root_element.path + "/info")
 
     @staticmethod
     def create(moose, filename):

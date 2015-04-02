@@ -9,19 +9,27 @@ from __future__ import unicode_literals
 import pkg_resources
 import os
 from time import strftime, localtime
+import goose
 
+APPLICATION_BACKGROUND_IMAGE_PATH   = pkg_resources.resource_filename(
+    goose.__name__ , "data/images/moose.png"
+                                                                     )
 
-APPLICATION_BACKGROUND_IMAGE_PATH =
-    pkg_resources.resource_filename(goose.__name__ , "data/images/moose.png")
+APPLICATION_ICON_PATH               = pkg_resources.resource_filename(
+    goose.__name__ , "data/icons/moose-icon.png"
+                                                                     )
 
-RUN_SIMULATION_ICON_PATH    =
-    pkg_resources.resource_filename(goose.__name__ , "data/icons/play.svg")
+RUN_SIMULATION_ICON_PATH            = pkg_resources.resource_filename(
+    goose.__name__ , "data/icons/play.svg"
+                                                                     )
 
-STOP_SIMULATION_ICON_PATH   =
-    pkg_resources.resource_filename(goose.__name__ , "data/icons/pause.svg")
+STOP_SIMULATION_ICON_PATH           = pkg_resources.resource_filename(
+    goose.__name__ , "data/icons/pause.svg"
+                                                                     )
 
-RESET_SIMULATION_ICON_PATH  =
-    pkg_resources.resource_filename(goose.__name__ , "data/icons/stop.svg")
+RESET_SIMULATION_ICON_PATH          = pkg_resources.resource_filename(
+    goose.__name__ , "data/icons/stop.svg"
+                                                                     )
 
 
 EXTENSIONS          = { "SBML"      :   ["xml"]
@@ -29,14 +37,11 @@ EXTENSIONS          = { "SBML"      :   ["xml"]
                       , "CSPACE"    :   ["cspace"]
                       , "Genesis"   :   ["g"]
                       , "NeuroML"   :   ["nml", "xml"]
+                      , "SWC"       :   ["swc"]
                       }
-MOOSE_ROOT_DIRECTORY    = os.path.expanduser("~/.moose/")
-MOOSE_LOG               = "logs"
-MOOSE_VERSION           = "3.1.0"
-MOOSE_RUN_TIME          = strftime("%Y%m%d%H%M%S%Z", localtime())
 
-MOOSE_LOG_DIRECTORY = os.path.join( MOOSE_ROOT_DIRECTORY
-                                  , MOOSE_VERSION
-                                  , MOOSE_LOG
-                                  , MOOSE_RUN_TIME
-                                  )
+CHEMICAL_PLOT_CLOCK_IDS             = [18]
+CHEMICAL_SIMULATION_CLOCK_IDS       = range(11, 18)
+
+ELECTRICAL_PLOT_CLOCK_IDS           = [8]
+ELECTRICAL_SIMULATION_CLOCK_IDS     = range(0, 8)

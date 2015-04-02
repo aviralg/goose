@@ -116,9 +116,9 @@ class MooseService(SlaveService):
 
     def _run_simulation( self
                        , runtime
-                       , start_callback
-                       , update_callback
-                       , finish_callback
+                       , interlude
+                       , prelude   = id
+                       , postlude  = id
                        ):
         """This function is cool
         """
@@ -258,8 +258,6 @@ multicompartment single-neuron models, to spiking neuron network models.
 
         for modelfile in modelfiles:
             moose.load(modelfile)
-
-        moose.loadModel("/home/aviral/Projects/moose-trunk/Demos/Genesis_files/Kholodenko.g", "/Kholodenko")
 
         server = ThreadedServer( MooseService
                                , hostname       = self.host

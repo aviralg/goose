@@ -1,7 +1,7 @@
 from PyQt4 import Qt, QtCore, QtGui
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
-from goose.utils.config import *
+from .utils import *
 
 
 class SchedulingWidget(QToolBar):

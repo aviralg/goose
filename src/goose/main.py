@@ -7,14 +7,13 @@ import rpyc
 import socket
 import errno
 import itertools
-from goose.widgets import *
-from goose.utils.config import *
+import widgets
+from .utils   import *
 from PyQt4 import Qt, QtCore, QtGui
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
-from .MdiArea import MdiArea
 import signal
-import Scheduler
+from scheduler import SchedulingWidget
 # from win32process import DETACHED_PROCESS, CREATE_NEW_PROCESS_GROUP
 # print(QtCore.PYQT_VERSION_STR)
 # rpyc.classic.connect("0.0.0.0", "1000", keepalive = True)
@@ -71,8 +70,9 @@ class MainWindow(QMainWindow):
               }
     signals["post"]["model"]["run"] = pyqtSignal(object)
 
-    def __init__(self, application, models):
+    def __init__(self, application, goose_log_directory, models):
         super(MainWindow, self).__init__()
+        self.goose_log_directory = goose_log_directory
         self.models       = {}
         self._application = application
         self._setup_main_window()
@@ -103,7 +103,7 @@ class MainWindow(QMainWindow):
         self.setAcceptDrops(True)
 
     def _setup_toolbars(self):
-        self.addToolBar(Scheduler.SchedulingWidget(slots = self._slots))
+        self.addToolBar(SchedulingWidget(slots = self._slots))
 
     def _setup_central_widget(self):
         widget = MdiArea()
@@ -246,9 +246,9 @@ class MainWindow(QMainWindow):
     def start_moose_server(self):
         port = self.get_free_port()
         host = "localhost"
-        logfile = os.path.join(MOOSE_LOG_DIRECTORY, str(port) + ".log")
+        logfile = os.path.join(self.goose_log_directory, str(port) + ".log")
         open(logfile, "w").close()
-        args    = ["python", GOOSE_DIRECTORY + "/moose_server.py", "-p", str(port), "--logfile", logfile]
+        args    = ["moose-server", "-p", str(port), "--logfile", logfile]
         INFO("Starting moose server on port " + str(port))
         pid = subprocess.Popen(args).pid
         return (host, port, pid)
@@ -307,6 +307,14 @@ class MainWindow(QMainWindow):
                 , "service"  :   connection.root
                 , "thread"   :   rpyc.BgServingThread(connection)
                 }
+            import widgets.kkit
+            DEBUG(id(connection.modules.moose))
+            sys.modules["moose"] = connection.modules.moose
+            self.centralWidget().addSubWindow(
+                widgets.kkit.KineticsWidget( QtCore.QSize(624 ,468)
+                                   , self.current_model
+                                   )              )
+
         except socket.error as serr:
             if serr.errno != errno.ECONNREFUSED:
                 raise serr
@@ -381,3 +389,36 @@ def portgen(self):
             port -= 1
         except:
             yield port
+
+"""Contains multi document interface window implementation for the MainWindow.
+"""
+
+class MdiArea(QMdiArea):
+    """Multi Document Interface window. Allows any number of child widgets
+       to be displayed in a tiled or tabified manner.
+    """
+    def __init__(self):
+        super(MdiArea, self).__init__()
+        self._background_image = QImage(APPLICATION_BACKGROUND_IMAGE_PATH)
+        self._background      = None
+
+    def resizeEvent(self, event):
+        """Called every time the window is resized.
+           Resizes and shows the moose image in the background.
+           Source : http://qt-project.org/faq/answer/when_setting_a_background_pixmap_for_a_widget_it_is_tiled_if_the_pixmap_is_
+        """
+        self._background = QImage( event.size()
+                                 , QImage.Format_ARGB32_Premultiplied
+                                 )
+        painter = QPainter(self._background)
+        painter.fillRect( self._background.rect()
+                        , QColor(255, 255, 255, 255)
+                        )
+        scaled = self._background_image.scaled( event.size()
+                                              , QtCore.Qt.KeepAspectRatio
+                                              )
+        scaled_rect = scaled.rect()
+        scaled_rect.moveCenter(self._background.rect().center())
+        painter.drawImage(scaled_rect, scaled)
+        self.setBackground(QBrush(self._background))
+        super(MdiArea, self).resizeEvent(event)

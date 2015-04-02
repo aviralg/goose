@@ -53,13 +53,8 @@ setup( name             =   'goose'
                             ]
      , package_dir      =   { ''    :   "src"
                             }
-     , package_data     =   { ''   : [ 'src/goose/data/colormaps/*.*'
-                                     , 'src/goose/data/icons/*.png'
-                                     , 'src/goose/data/images/*.png'
-                                     ]
+     , package_data     =   { ''    :   [ 'src/goose/data/*/*'
+                                        ]
                             }
      , scripts          =   scripts
 )
-
-
-

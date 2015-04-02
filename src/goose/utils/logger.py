@@ -8,14 +8,14 @@ console.setFormatter(formatter)
 console.setLevel(logging.DEBUG)
 LOGGER.addHandler(console)
 
-DEBUG                       = logger.debug
+DEBUG                       = LOGGER.debug
 
-INFO                        = logger.info
+INFO                        = LOGGER.info
 
-WARN                        = logger.warn
+WARN                        = LOGGER.warn
 
-ERROR                       = logger.error
+ERROR                       = LOGGER.error
 
-CRITICAL                    = logger.critical
+CRITICAL                    = LOGGER.critical
 
-EXCEPTION                   = logger.exception
+EXCEPTION                   = LOGGER.exception
