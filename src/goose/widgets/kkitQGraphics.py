@@ -65,7 +65,7 @@ class FuncItem(KineticsDisplayItem):
         self.gobj.setAcceptHoverEvents(True)
         self.gobj.mobj = self.mobj
         classname = self.mobj.className
-        funcdoc = (element(self.mobj.path)).expr
+        funcdoc = (moose.element(self.mobj.path)).expr
         self.gobj.setToolTip(funcdoc)
         #self.bg.setPen(Qt.QColor(100,100,10,10))
 

@@ -9,14 +9,13 @@ from collections import defaultdict
 
 from PyQt4 import QtGui, QtCore, Qt
 
-moose = None
+import moose
 
 class  KineticsWidget(QtGui.QWidget):
     def __init__(self,size,currentModel,parent=None):
         QtGui.QWidget.__init__(self)
         print(id(sys.modules["moose"]))
-        moose = currentModel["moose"]
-        sys.modules["moose"] = moose
+        # sys.modules["moose"] = moose
         print(id(sys.modules["moose"]))
         self.modelRoot  = currentModel["model"].path
         self.border     = 5
@@ -44,7 +43,7 @@ class  KineticsWidget(QtGui.QWidget):
         if moose.wildcardFind(self.modelRoot+'/##[ISA=ChemCompt]'):
             #compartment and its members are setup
             self.meshEntry,self.xmin,self.xmax,self.ymin,self.ymax,self.positionInfoExist = setupMeshObj(self.modelRoot)
-
+            print(self.meshEntry)
             #This function collects information of what is connected to what. e.g which Sub/Prd connected to Enz/Reac \
             setupItem(self.modelRoot,self.srcdesConnection)
             if not self.positionInfoExist:
@@ -92,7 +91,7 @@ class  KineticsWidget(QtGui.QWidget):
                     enzItem = EnzItem(enzObj,self.qGraCompt[cmpt])
                 else:
                     enzItem = MMEnzItem(enzObj,self.qGraCompt[cmpt])
-                self.mooseId_GObj[element(enzObj.getId())] = enzItem
+                self.mooseId_GObj[moose.element(enzObj.getId())] = enzItem
                 self.setupDisplay(enzinfo,enzItem,"enzyme")
 
                 #self.setupSlot(enzObj,enzItem)
@@ -101,33 +100,33 @@ class  KineticsWidget(QtGui.QWidget):
                 poolinfo = poolObj.path+'/info'
                 #depending on Editor Widget or Run widget pool will be created a PoolItem or PoolItemCircle
                 poolItem = self.makePoolItem(poolObj,self.qGraCompt[cmpt])
-                self.mooseId_GObj[element(poolObj.getId())] = poolItem
+                self.mooseId_GObj[moose.element(poolObj.getId())] = poolItem
                 self.setupDisplay(poolinfo,poolItem,"pool")
 
             for reaObj in find_index(memb,'reaction'):
                 reainfo = reaObj.path+'/info'
                 reaItem = ReacItem(reaObj,self.qGraCompt[cmpt])
                 self.setupDisplay(reainfo,reaItem,"reaction")
-                self.mooseId_GObj[element(reaObj.getId())] = reaItem
+                self.mooseId_GObj[moose.element(reaObj.getId())] = reaItem
 
             for tabObj in find_index(memb,'table'):
                 tabinfo = tabObj.path+'/info'
                 tabItem = TableItem(tabObj,self.qGraCompt[cmpt])
                 self.setupDisplay(tabinfo,tabItem,"tab")
-                self.mooseId_GObj[element(tabObj.getId())] = tabItem
+                self.mooseId_GObj[moose.element(tabObj.getId())] = tabItem
 
             for funcObj in find_index(memb,'function'):
-                funcinfo = moose.element(funcObj.parent).path+'/info'
-                funcParent =self.mooseId_GObj[element(funcObj.parent)]
+                funcinfo = moose.moose.element(funcObj.parent).path+'/info'
+                funcParent =self.mooseId_GObj[moose.element(funcObj.parent)]
                 funcItem = FuncItem(funcObj,funcParent)
-                self.mooseId_GObj[element(funcObj.getId())] = funcItem
+                self.mooseId_GObj[moose.element(funcObj.getId())] = funcItem
                 self.setupDisplay(funcinfo,funcItem,"Function")
 
             for cplxObj in find_index(memb,'cplx'):
                 cplxinfo = (cplxObj.parent).path+'/info'
-                p = element(cplxObj).parent
-                cplxItem = CplxItem(cplxObj,self.mooseId_GObj[element(cplxObj).parent])
-                self.mooseId_GObj[element(cplxObj.getId())] = cplxItem
+                p = moose.element(cplxObj).parent
+                cplxItem = CplxItem(cplxObj,self.mooseId_GObj[moose.element(cplxObj).parent])
+                self.mooseId_GObj[moose.element(cplxObj.getId())] = cplxItem
                 self.setupDisplay(cplxinfo,cplxItem,"cplx")
 
         # compartment's rectangle size is calculated depending on children
@@ -164,7 +163,7 @@ class  KineticsWidget(QtGui.QWidget):
         if not self.positionInfoExist:
             try:
                 # kkit does exist item's/info which up querying for parent.path gives the information of item's parent
-                x,y = self.autoCordinatepos[(element(iteminfo).parent).path]
+                x,y = self.autoCordinatepos[(moose.element(iteminfo).parent).path]
             except:
                 # But in Cspace reader doesn't create item's/info, up on querying gives me the error which need to change\
                 # in ReadCspace.cpp, at present i am taking care b'cos i don't want to pass just the item where I need to check\
@@ -175,8 +174,8 @@ class  KineticsWidget(QtGui.QWidget):
                 x,y = self.autoCordinatepos[parent]
             ypos = (y-self.ymin)*self.yratio
         else:
-            x = float(element(iteminfo).getField('x'))
-            y = float(element(iteminfo).getField('y'))
+            x = float(moose.element(iteminfo).getField('x'))
+            y = float(moose.element(iteminfo).getField('y'))
             #Qt origin is at the top-left corner. The x values increase to the right and the y values increase downwards \
             #as compared to Genesis codinates where origin is center and y value is upwards, that is why ypos is negated
             if Anno.modeltype == "kkit":
@@ -208,13 +207,13 @@ class  KineticsWidget(QtGui.QWidget):
                     print inn.className + ' : ' +inn.name+ " doesn't output message"
                 else:
                     for items in (items for items in out[0] ):
-                        des = self.mooseId_GObj[element(items[0])]
+                        des = self.mooseId_GObj[moose.element(items[0])]
                         self.lineCord(src,des,items,itemignoreZooming)
                 if len(out[1]) == 0:
                     print inn.className + ' : ' +inn.name+ " doesn't output message"
                 else:
                     for items in (items for items in out[1] ):
-                        des = self.mooseId_GObj[element(items[0])]
+                        des = self.mooseId_GObj[moose.element(items[0])]
                         self.lineCord(src,des,items,itemignoreZooming)
             elif isinstance(out,list):
                 if len(out) == 0:
@@ -222,7 +221,7 @@ class  KineticsWidget(QtGui.QWidget):
                 else:
                     src = self.mooseId_GObj[inn]
                     for items in (items for items in out ):
-                        des = self.mooseId_GObj[element(items[0])]
+                        des = self.mooseId_GObj[moose.element(items[0])]
                         self.lineCord(src,des,items,itemignoreZooming)
     def lineCord(self,src,des,type_no,itemignoreZooming):
         srcdes_list = []
@@ -249,7 +248,7 @@ class  KineticsWidget(QtGui.QWidget):
         des = srcdes_list[1]
         endtype = srcdes_list[2]
         line = srcdes_list[3]
-        source = element(next((k for k,v in self.mooseId_GObj.items() if v == src), None))
+        source = moose.element(next((k for k,v in self.mooseId_GObj.items() if v == src), None))
         for l,v,o in self.object2line[src]:
             if v == des and o ==line:
                 l.setPolygon(arrow)
@@ -264,7 +263,7 @@ class  KineticsWidget(QtGui.QWidget):
         pen = QtGui.QPen(QtCore.Qt.green, 0, Qt.Qt.SolidLine, Qt.Qt.RoundCap, Qt.Qt.RoundJoin)
         pen.setWidth(self.arrowsize)
         # Green is default color moose.ReacBase and derivatives - already set above
-        if  isinstance(source, EnzBase):
+        if  isinstance(source, moose.EnzBase):
             if ( (endtype == 's') or (endtype == 'p')):
                 pen.setColor(QtCore.Qt.red)
             elif(endtype != 'cplx'):

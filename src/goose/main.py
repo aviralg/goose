@@ -307,9 +307,9 @@ class MainWindow(QMainWindow):
                 , "service"  :   connection.root
                 , "thread"   :   rpyc.BgServingThread(connection)
                 }
+            sys.modules["moose"] = connection.modules.moose
             import widgets.kkit
             DEBUG(id(connection.modules.moose))
-            sys.modules["moose"] = connection.modules.moose
             self.centralWidget().addSubWindow(
                 widgets.kkit.KineticsWidget( QtCore.QSize(624 ,468)
                                    , self.current_model

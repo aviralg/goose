@@ -27,10 +27,14 @@ def setupMeshObj(modelRoot):
         meshEntry = {}
     xcord = []
     ycord = []
+    print(modelRoot)
     meshEntryWildcard = '/##[ISA=ChemCompt]'
     if modelRoot != '/':
         meshEntryWildcard = modelRoot+meshEntryWildcard
+    print("meshEntry ",meshEntryWildcard)
+    print(id(moose))
     for meshEnt in moose.wildcardFind(meshEntryWildcard):
+        print(" ###")
         mollist  = []
         realist  = []
         enzlist  = []
@@ -43,6 +47,7 @@ def setupMeshObj(modelRoot):
         enzlist  = moose.wildcardFind(meshEnt.path+'/##[ISA=EnzBase]')
         realist  = moose.wildcardFind(meshEnt.path+'/##[ISA=ReacBase]')
         tablist  = moose.wildcardFind(meshEnt.path+'/##[ISA=StimulusTable]')
+        print(mol_cpl)
         if mol_cpl or funclist or enzlist or realist or tablist:
             for m in mol_cpl:
                 if isinstance(moose.element(m.parent),moose.CplxEnzBase):
