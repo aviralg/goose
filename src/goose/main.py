@@ -8,12 +8,13 @@ import socket
 import errno
 import itertools
 import widgets
-from .utils   import *
+from .utils import *
 from PyQt4 import Qt, QtCore, QtGui
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 import signal
 from scheduler import SchedulingWidget
+
 # from win32process import DETACHED_PROCESS, CREATE_NEW_PROCESS_GROUP
 # print(QtCore.PYQT_VERSION_STR)
 # rpyc.classic.connect("0.0.0.0", "1000", keepalive = True)
@@ -73,7 +74,8 @@ class MainWindow(QMainWindow):
     def __init__(self, application, goose_log_directory, models):
         super(MainWindow, self).__init__()
         self.goose_log_directory = goose_log_directory
-        self.models       = {}
+        self.instance   = None
+        self.instances  = {}
         self._application = application
         self._setup_main_window()
         self._setup_central_widget()
@@ -295,9 +297,9 @@ class MainWindow(QMainWindow):
             connection = rpyc.classic.connect(host, port)
             INFO("Connected to Moose server on " + host + ":" + str(port))
             modelname = self.unique_modelname(filename)
-            connection.modules.moose.loadModel(filename, modelname)
+            connection.modules.moose.load(filename, modelname)
             INFO("Loaded " + modelname)
-            self.current_model = self.models[modelname] = \
+            self.instance = self.instances[modelname] = \
                 { "conn"     :   connection
                 , "moose"    :   connection.modules.moose
                 , "pid"      :   pid
@@ -307,19 +309,18 @@ class MainWindow(QMainWindow):
                 , "service"  :   connection.root
                 , "thread"   :   rpyc.BgServingThread(connection)
                 }
-            sys.modules["moose"] = connection.modules.moose
-            import widgets.kkit
-            DEBUG(id(connection.modules.moose))
+            # sys.modules["moose"] = connection.modules.moose
+            # import widgets.kkit
+            # DEBUG(id(connection.modules.moose))
             self.centralWidget().addSubWindow(
-                widgets.kkit.KineticsWidget( QtCore.QSize(624 ,468)
-                                   , self.current_model
-                                   )              )
+                widgets.kkit.KineticsWidget(self.instance)
+                                             )
 
         except socket.error as serr:
             if serr.errno != errno.ECONNREFUSED:
                 raise serr
             DEBUG("Failed to connect to Moose server on " + host + ":" + str(port))
-            QTimer.singleShot(1000, lambda : self.connect_to_moose_server(host, port, pid, filename))
+            QTimer.singleShot(2000, lambda : self.connect_to_moose_server(host, port, pid, filename))
 
     def load_slot(self, filename):
         (host, port, pid) = self.start_moose_server()
