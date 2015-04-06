@@ -46,7 +46,7 @@ setup( name             =   'goose'
                             , 'Topic :: Scientific/Engineering'
                             ]
      , license          =   'GPLv2'
-     , requires         =   requires
+     , install_requires         =   requires
      , packages         =   [ "goose"
                             , "goose.utils"
                             , "goose.widgets"

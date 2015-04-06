@@ -8,6 +8,7 @@ import traceback
 from goose import *
 from PyQt4 import Qt, QtCore, QtGui
 from PyQt4.QtGui import *
+import imp
 
 GOOSE_ROOT_DIRECTORY    = os.path.expanduser("~/.goose/")
 GOOSE_LOG               = "logs"
@@ -25,17 +26,32 @@ def excepthook(exception_class, exception, tb):
     CRITICAL("\n" + "".join(traceback.format_tb(tb)))
     sys.exit()
 
+def moose_exists():
+    try:
+        imp.find_module('moose')
+        return True
+    except ImportError:
+        return False
+
 def main():
     sys.excepthook = excepthook
     if not os.path.exists(GOOSE_LOG_DIRECTORY):
         os.makedirs(GOOSE_LOG_DIRECTORY)
     application = QApplication(sys.argv)
     application.setWindowIcon(QIcon(goose.APPLICATION_ICON_PATH))
+    if not moose_exists():
+        QMessageBox.critical( None
+                            , "Where is MOOSE?"
+                            , """I cannot find MOOSE.
+Are you sure you installed MOOSE? Maybe MOOSE is installed in a nonstandard location and python cannot find it.
+Please make sure that MOOSE is visible to your python
+installation before running me."""
+                            )
+        sys.exit(0)
     window =  MainWindow(application, GOOSE_LOG_DIRECTORY ,sys.argv[1:])
     window.setWindowState(QtCore.Qt.WindowMaximized)
     window.show()
     sys.exit(application.exec_())
-
 
 if __name__ == "__main__":
     main()
