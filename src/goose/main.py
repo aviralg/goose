@@ -103,7 +103,8 @@ class MainWindow(QMainWindow):
         self.setAcceptDrops(True)
 
     def _setup_toolbars(self):
-        self.addToolBar(SchedulingWidget(slots = self._slots))
+        # self.addToolBar(SchedulingWidget(slots = self._slots))
+        pass
 
     def _setup_central_widget(self):
         widget = MdiArea()
@@ -310,10 +311,11 @@ class MainWindow(QMainWindow):
             sys.modules["moose"] = connection.modules.moose
             import widgets.kkit
             DEBUG(id(connection.modules.moose))
-            self.centralWidget().addSubWindow(
-                widgets.kkit.KineticsWidget( QtCore.QSize(624 ,468)
-                                   , self.current_model
-                                   )              )
+            widget = widgets.kkit.KineticsWidget( QtCore.QSize(624 ,468)
+                                                , self.current_model
+                                                )
+            self.centralWidget().addSubWindow(widget)
+            widget.show()
 
         except socket.error as serr:
             if serr.errno != errno.ECONNREFUSED:
