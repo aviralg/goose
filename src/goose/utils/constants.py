@@ -35,6 +35,9 @@ FUNCTION_IMAGE_PATH                 = pkg_resources.resource_filename(
     goose.__name__ , "data/images/Function.png"
                                                                      )
 
+RAINBOW_COLORMAP_PATH               = pkg_resources.resource_filename(
+    goose.__name__ , "data/colormaps/rainbow.pkl"
+                                                                     )
 
 EXTENSIONS          = { "SBML"      :   ["xml"]
                       , "Python"    :   ["py"]

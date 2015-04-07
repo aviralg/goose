@@ -56,7 +56,7 @@ def checkCreate(scene,view,modelpath,string,num,event_pos,layoutPt):
         mobj = self.moose.CubeMesh(modelpath.path+'/'+string_num)
         mobj.volume = 1e-15
         mesh = self.moose.element(mobj.path+'/mesh')
-        print "modelBuid ",view.sceneContainerPt.sceneRect()
+        # print "modelBuid ",view.sceneContainerPt.sceneRect()
         qGItem = ComptItem(scene,pos.toPoint().x(),pos.toPoint().y(),800,500,mobj)
         qGItem.setPen(QtGui.QPen(Qt.QColor(66,66,66,100), 5, Qt.Qt.SolidLine, Qt.Qt.RoundCap, Qt.Qt.RoundJoin))
         view.sceneContainerPt.addItem(qGItem)

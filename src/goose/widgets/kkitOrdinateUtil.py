@@ -1,7 +1,7 @@
 import numpy as np
 import networkx as nx
 from collections import Counter
-
+from goose.utils import *
 def xyPosition(objInfo,xory,moose):
     try:
         return(float(moose.element(objInfo).getField(xory)))
@@ -29,16 +29,16 @@ def setupMeshObj(instance):
         meshEntry = {}
     xcord = []
     ycord = []
-    print "kkitOrdinateUtil 32",moose
-    print "\n modelRoot",
-    print(modelRoot)
+    # print "kkitOrdinateUtil 32",moose
+    # print "\n modelRoot",
+    # print(modelRoot)
     meshEntryWildcard = '/##[ISA=ChemCompt]'
     if modelRoot != '/':
         meshEntryWildcard = modelRoot+meshEntryWildcard
-    print("meshEntry ",meshEntryWildcard)
-    print(id(moose))
+    # print("meshEntry ",meshEntryWildcard)
+    # print(id(moose))
     for meshEnt in moose.wildcardFind(meshEntryWildcard):
-        print(" ###")
+        # print(" ###")
         mollist  = []
         realist  = []
         enzlist  = []
@@ -51,7 +51,7 @@ def setupMeshObj(instance):
         enzlist  = moose.wildcardFind(meshEnt.path+'/##[ISA=EnzBase]')
         realist  = moose.wildcardFind(meshEnt.path+'/##[ISA=ReacBase]')
         tablist  = moose.wildcardFind(meshEnt.path+'/##[ISA=StimulusTable]')
-        print(mol_cpl)
+        # print(mol_cpl)
         if mol_cpl or funclist or enzlist or realist or tablist:
             for m in mol_cpl:
                 if isinstance(moose.element(m.parent),moose.CplxEnzBase):
@@ -104,7 +104,7 @@ def setupItem(instance,cntDict):
     #print " setupItem"
     moose = instance['moose']
     modelPath = instance['model'].path
-    print "kkitOrdinateUtil 106 ",modelPath
+    # DEBUG(modelPath)
     sublist = []
     prdlist = []
     zombieType = ['ReacBase','EnzBase','Function','StimulusTable']

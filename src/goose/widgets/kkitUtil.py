@@ -3,9 +3,10 @@ from PyQt4.QtGui import QColor
 import numpy as np
 import os
 import pickle
+from goose.utils import *
 from random import randint
 
-colormap_file = open('/home/harsha/trunk/gui/colormaps/rainbow2.pkl','rb')
+colormap_file = open(RAINBOW_COLORMAP_PATH,'rb')
 colorMap = pickle.load(colormap_file)
 colormap_file.close()
 

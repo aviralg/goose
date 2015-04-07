@@ -14,6 +14,8 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 import signal
 from scheduler import SchedulingWidget
+import widgets
+import widgets.kkit
 # from win32process import DETACHED_PROCESS, CREATE_NEW_PROCESS_GROUP
 # print(QtCore.PYQT_VERSION_STR)
 # rpyc.classic.connect("0.0.0.0", "1000", keepalive = True)
@@ -309,9 +311,6 @@ class MainWindow(QMainWindow):
                 , "service"  :   connection.root
                 , "thread"   :   rpyc.BgServingThread(connection)
                 }
-            sys.modules["moose"] = connection.modules.moose
-            import widgets.kkit
-            DEBUG(id(connection.modules.moose))
             widget = widgets.kkit.KineticsWidget(self.instance)
             self.centralWidget().addSubWindow(widget)
             widget.show()

@@ -40,7 +40,7 @@ class  KineticsWidget(QtGui.QWidget):
             #compartment and its members are setup
             #self.meshEntry,self.xmin,self.xmax,self.ymin,self.ymax,self.positionInfoExist = setupMeshObj(self.modelRoot)
             self.meshEntry,self.xmin,self.xmax,self.ymin,self.ymax,self.positionInfoExist = setupMeshObj(self.instance)
-            print(self.meshEntry)
+            # print(self.meshEntry)
             #This function collects information of what is connected to what. e.g which Sub/Prd connected to Enz/Reac \
             #setupItem(self.modelRoot,self.srcdesConnection)
             setupItem(self.instance,self.srcdesConnection)
@@ -50,7 +50,7 @@ class  KineticsWidget(QtGui.QWidget):
 
     # def resizeEvent(self,event):
         self.sceneContainer.clear()
-        print " resizeEvent"
+        # print " resizeEvent"
         #self.size = event.size()
         #print " size in kkit ",self.size
         self.size = QtCore.QSize(624 ,468)
