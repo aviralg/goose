@@ -1,11 +1,11 @@
-from moose import Annotator
+#from moose import Annotator
 from PyQt4.QtGui import QColor
 import numpy as np
 import os
 import pickle
 from random import randint
 
-colormap_file = open('/home/aviral/Projects/moose-trunk/gui/colormaps/rainbow2.pkl','rb')
+colormap_file = open('/home/harsha/trunk/gui/colormaps/rainbow2.pkl','rb')
 colorMap = pickle.load(colormap_file)
 colormap_file.close()
 
@@ -16,7 +16,7 @@ def getRandColor():
     else:
         return getRandColor()
 
-def getColor(iteminfo):
+def getColor(iteminfo,moose):
     """ Getting a textcolor and background color for the given  mooseObject \
         If textcolor is empty replaced with green \
            background color is empty replaced with blue
@@ -25,8 +25,8 @@ def getColor(iteminfo):
            The colors are not valid there are siliently replaced with some values \
            but while model building can raise an exception
     """
-    textcolor = Annotator(iteminfo).getField('textColor')
-    bgcolor = Annotator(iteminfo).getField('color')
+    textcolor = moose.Annotator(iteminfo).getField('textColor')
+    bgcolor = moose.Annotator(iteminfo).getField('color')
     if(textcolor == ''): textcolor = 'green'
     if(bgcolor == ''): bgcolor = 'blue'
     if(textcolor == bgcolor):textcolor = getRandColor()

@@ -1,7 +1,7 @@
 from PyQt4 import QtGui, QtCore, Qt
-import moose
 from PyQt4.QtGui import QPixmap, QImage, QGraphicsPixmapItem
 from constants import *
+from goose import *
 
 class KineticsDisplayItem(QtGui.QGraphicsWidget):
     """Base class for display elemenets in kinetics layout"""
@@ -20,7 +20,7 @@ class KineticsDisplayItem(QtGui.QGraphicsWidget):
         self.setFlag(QtGui.QGraphicsItem.ItemIgnoresTransformations, False)
 
     def getParentMooseObject(self):
-        return moose.element(self.mobj).parent
+        return self.moose.element(self.mobj).parent
 
     def getParentGraphicsObject(self):
         return self.parentItem()
@@ -57,7 +57,8 @@ class FuncItem(KineticsDisplayItem):
     def __init__(self, mobj, parent):
         super(FuncItem, self).__init__(mobj, parent)
         self.setFlag(QtGui.QGraphicsItem.ItemIsMovable, False)
-        self.funcImage = QImage('../Docs/images/classIcon/Function.png').scaled(15,33)
+        #self.funcImage = QImage('../Docs/images/classIcon/Function.png').scaled(15,33)
+        self.funcImage = QImage(FUNCTION_IMAGE_PATH).scaled(15,33)
         self.bg = QtGui.QGraphicsRectItem(self)
         self.bg.setAcceptHoverEvents(True)
         self.gobj = QtGui.QGraphicsPixmapItem(QtGui.QPixmap.fromImage(self.funcImage),self.bg)
@@ -65,8 +66,8 @@ class FuncItem(KineticsDisplayItem):
         self.gobj.setAcceptHoverEvents(True)
         self.gobj.mobj = self.mobj
         classname = self.mobj.className
-        funcdoc = (moose.element(self.mobj.path)).expr
-        self.gobj.setToolTip(funcdoc)
+        # funcdoc = (self.moose.element(self.mobj.path)).expr
+        # self.gobj.setToolTip(funcdoc)
         #self.bg.setPen(Qt.QColor(100,100,10,10))
 
     def setDisplayProperties(self,x,y,textcolor,bgcolor):
@@ -110,7 +111,7 @@ class FuncItem(KineticsDisplayItem):
         self.gobj.setToolTip(funcdoc)
         # self._gobj = gobj
         # #if type(self._gobj) is moose.ZombiePool:
-        # if (isinstance(self._gobj,PoolBase)):
+        # if (isinstance(self._gobj,self.moose.PoolBase)):
         #     self._conc = self.mobj.conc
         #     self._n    = self.mobj.n
         #     doc = "Conc\t: "+str(self._conc)+"\nn\t: "+str(self._n)
@@ -134,7 +135,7 @@ class PoolItem(KineticsDisplayItem):
         self.gobj.mobj = self.mobj
         classname = self.mobj.className
         # classname = 'PoolBase'
-        # doc = moose.element('/classes/%s' % (classname)).docs
+        # doc = self.moose.element('/classes/%s' % (classname)).docs
         # print "docs ",self.gobj.mobj, " ",doc
         # doc = doc.split('Description:')[-1].split('Name:')[0].strip()
         self._conc = self.mobj.conc
@@ -191,7 +192,7 @@ class PoolItem(KineticsDisplayItem):
     def updateValue(self,gobj):
         self._gobj = gobj
         #if type(self._gobj) is moose.ZombiePool:
-        if (isinstance(self._gobj,PoolBase)):
+        if (isinstance(self._gobj,self.moose.PoolBase)):
             self._conc = self.mobj.conc
             self._n    = self.mobj.n
             doc = "Conc\t: "+str(self._conc)+"\nn\t: "+str(self._n)
@@ -314,7 +315,7 @@ class ReacItem(KineticsDisplayItem):
         self.gobj.mobj = self.mobj
         #classname = self.mobj.className
         # classname = 'ReacBase'
-        # doc = moose.element('/classes/%s' % (classname)).docs
+        # doc = self.moose.element('/classes/%s' % (classname)).docs
         # print "docs ",self.gobj.mobj, " ",doc
         # doc = doc.split('Description:')[-1].split('Name:')[0].strip()
         self._Kf = self.gobj.mobj.Kf
@@ -325,7 +326,7 @@ class ReacItem(KineticsDisplayItem):
     def updateValue(self,gobj):
         self._gobj = gobj
         #if ( type(self._gobj) is moose.ZombieReac or type(self_gobj) is moose.Reac):
-        if (isinstance(self._gobj,ReacBase)):
+        if (isinstance(self._gobj,self.moose.ReacBase)):
             self._Kf = self._gobj.Kf
             self._Kb = self._gobj.Kb
             doc = "Kf\t: "+str(self._Kf)+"\nKb\t: "+str(self._Kb)
@@ -367,7 +368,7 @@ class EnzItem(KineticsDisplayItem):
                                             EnzItem.defaultHeight, self)
         self.gobj.mobj = self.mobj
         # classname = 'EnzBase'
-        # doc = moose.element('/classes/%s' % (classname)).docs
+        # doc = self.moose.element('/classes/%s' % (classname)).docs
         # doc = doc.split('Description:')[-1].split('Name:')[0].strip()
         self._Km   = self.gobj.mobj.Km
         self._Kcat = self.gobj.mobj.kcat
@@ -376,7 +377,7 @@ class EnzItem(KineticsDisplayItem):
 
     def updateValue(self,gobj):
         self._gobj = gobj
-        if ( isinstance(self.gobj,EnzBase)):
+        if ( isinstance(self.gobj,self.moose.EnzBase)):
             self._Km = self._gobj.Km
             self._Kcat = self._gobj.kcat
             doc = "Km\t: "+str(self._Km)+"\nKcat\t: "+str(self._Kcat)
@@ -417,7 +418,7 @@ class CplxItem(KineticsDisplayItem):
 
     def updateValue(self,gobj):
         self._gobj = gobj
-        if (isinstance(self._gobj,PoolBase)):
+        if (isinstance(self._gobj,self.moose.PoolBase)):
             self._conc = self.mobj.conc
             self._n    = self.mobj.n
             doc = "Conc\t: "+str(self._conc)+"\nn\t: "+str(self._n)

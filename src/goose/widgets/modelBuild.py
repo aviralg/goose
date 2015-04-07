@@ -1,4 +1,4 @@
-import moose
+#import moose
 from kkitQGraphics import * 
 from kkitOrdinateUtil import *
 from kkitUtil import *
@@ -24,10 +24,10 @@ def checkCreate(scene,view,modelpath,string,num,event_pos,layoutPt):
         modelRoot = modelpath[0:modelpath.find('/',1)]
     else:
         modelRoot = modelpath
-    mType = moose.Annotator((moose.element(modelRoot+'/info'))).modeltype
+    mType = moose.Annotator((self.moose.element(modelRoot+'/info'))).modeltype
     itemAtView = view.sceneContainerPt.itemAt(view.mapToScene(event_pos))
     pos = view.mapToScene(event_pos)
-    modelpath = moose.element(modelpath)
+    modelpath = self.moose.element(modelpath)
     if num:
         if string == "CubeMesh":
             string_num = "Compartment"+str(num)
@@ -53,9 +53,9 @@ def checkCreate(scene,view,modelpath,string,num,event_pos,layoutPt):
         compartment = findCompartment(mobj)
         mobj = compartment
     if string == "CubeMesh":
-        mobj = moose.CubeMesh(modelpath.path+'/'+string_num)
+        mobj = self.moose.CubeMesh(modelpath.path+'/'+string_num)
         mobj.volume = 1e-15
-        mesh = moose.element(mobj.path+'/mesh')
+        mesh = self.moose.element(mobj.path+'/mesh')
         print "modelBuid ",view.sceneContainerPt.sceneRect()
         qGItem = ComptItem(scene,pos.toPoint().x(),pos.toPoint().y(),800,500,mobj)
         qGItem.setPen(QtGui.QPen(Qt.QColor(66,66,66,100), 5, Qt.Qt.SolidLine, Qt.Qt.RoundCap, Qt.Qt.RoundJoin))
@@ -66,9 +66,9 @@ def checkCreate(scene,view,modelpath,string,num,event_pos,layoutPt):
         layoutPt.qGraCompt[mobj]= qGItem
         view.emit(QtCore.SIGNAL("dropped"),mobj)
     elif string == "CylMesh":
-        mobj = moose.CylMesh(modelpath.path+'/'+string_num)
+        mobj = self.moose.CylMesh(modelpath.path+'/'+string_num)
         mobj.volume = 1e-15
-        mesh = moose.element(mobj.path+'/mesh')
+        mesh = self.moose.element(mobj.path+'/mesh')
         qGItem = ComptItem(scene,pos.toPoint().x(),pos.toPoint().y(),800,500,mobj)
         qGItem.setPen(QtGui.QPen(Qt.QColor(66,66,66,100), 5, Qt.Qt.SolidLine, Qt.Qt.RoundCap, Qt.Qt.RoundJoin))
         view.sceneContainerPt.addItem(qGItem)
@@ -89,11 +89,11 @@ def checkCreate(scene,view,modelpath,string,num,event_pos,layoutPt):
         # else:
             # mobj = compartment
         if string == "Pool":
-            poolObj = moose.Pool(mobj.path+'/'+string_num)
-            poolinfo = moose.Annotator(poolObj.path+'/info')
+            poolObj = self.moose.Pool(mobj.path+'/'+string_num)
+            poolinfo = self.moose.Annotator(poolObj.path+'/info')
         else:
-            poolObj = moose.BufPool(mobj.path+'/'+string_num)    
-            poolinfo = moose.Annotator(poolObj.path+'/info')
+            poolObj = self.moose.BufPool(mobj.path+'/'+string_num)    
+            poolinfo = self.moose.Annotator(poolObj.path+'/info')
         qGItem =PoolItem(poolObj,itemAtView)
         layoutPt.mooseId_GObj[poolObj] = qGItem
         posWrtComp = (itemAtView.mapFromScene(pos)).toPoint()
@@ -107,14 +107,14 @@ def checkCreate(scene,view,modelpath,string,num,event_pos,layoutPt):
         setupItem(modelpath.path,layoutPt.srcdesConnection)
         layoutPt.drawLine_arrow(False)
         #Dropping is on compartment then update Compart size
-        if isinstance(mobj,moose.ChemCompt):
-            compt = layoutPt.qGraCompt[moose.element(mobj)]
+        if isinstance(mobj,self.moose.ChemCompt):
+            compt = layoutPt.qGraCompt[self.moose.element(mobj)]
             updateCompartmentSize(compt)
         
     elif  string == "Reac":
         posWrtComp = (itemAtView.mapFromScene(pos)).toPoint()
-        reacObj = moose.Reac(mobj.path+'/'+string_num)
-        reacinfo = moose.Annotator(reacObj.path+'/info')
+        reacObj = self.moose.Reac(mobj.path+'/'+string_num)
+        reacinfo = self.moose.Annotator(reacObj.path+'/info')
         qGItem = ReacItem(reacObj,itemAtView)
         qGItem.setDisplayProperties(posWrtComp.x(),posWrtComp.y(),"white", "white")
         if mType == "new_kkit":
@@ -125,14 +125,14 @@ def checkCreate(scene,view,modelpath,string,num,event_pos,layoutPt):
         setupItem(modelpath.path,layoutPt.srcdesConnection)
         layoutPt.drawLine_arrow(False)
         #Dropping is on compartment then update Compart size
-        if isinstance(mobj,moose.ChemCompt):
-            compt = layoutPt.qGraCompt[moose.element(mobj)]
+        if isinstance(mobj,self.moose.ChemCompt):
+            compt = layoutPt.qGraCompt[self.moose.element(mobj)]
             updateCompartmentSize(compt)
 
     elif  string == "StimulusTable":
         posWrtComp = (itemAtView.mapFromScene(pos)).toPoint()
-        tabObj = moose.StimulusTable(mobj.path+'/'+string_num)
-        tabinfo = moose.Annotator(tabObj.path+'/info')
+        tabObj = self.moose.StimulusTable(mobj.path+'/'+string_num)
+        tabinfo = self.moose.Annotator(tabObj.path+'/info')
         qGItem = TableItem(tabObj,itemAtView)
         qGItem.setDisplayProperties(posWrtComp.x(),posWrtComp.y(),QtGui.QColor('white'),QtGui.QColor('white'))
         if mType == "new_kkit":
@@ -143,16 +143,16 @@ def checkCreate(scene,view,modelpath,string,num,event_pos,layoutPt):
         setupItem(modelpath.path,layoutPt.srcdesConnection)
         layoutPt.drawLine_arrow(False)
         #Dropping is on compartment then update Compart size
-        if isinstance(mobj,moose.ChemCompt):
-            compt = layoutPt.qGraCompt[moose.element(mobj)]
+        if isinstance(mobj,self.moose.ChemCompt):
+            compt = layoutPt.qGraCompt[self.moose.element(mobj)]
             updateCompartmentSize(compt)
     elif string == "Function":
         posWrtComp = (itemAtView.mapFromScene(pos)).toPoint()
         mobj = itemAtView.mobj
-        funcObj = moose.Function(mobj.path+'/'+string_num)
+        funcObj = self.moose.Function(mobj.path+'/'+string_num)
         funcObj.numVars+=1
-        funcinfo = moose.Annotator(funcObj.path+'/info')
-        moose.connect( funcObj, 'valueOut', mobj.path ,'setN' )
+        funcinfo = self.moose.Annotator(funcObj.path+'/info')
+        self.moose.connect( funcObj, 'valueOut', mobj.path ,'setN' )
         funcParent = layoutPt.mooseId_GObj[element(mobj.path)]
         qGItem = FuncItem(funcObj,funcParent)
         qGItem.setDisplayProperties(posWrtComp.x(),posWrtComp.y(),QtGui.QColor('red'),QtGui.QColor('green'))
@@ -165,8 +165,8 @@ def checkCreate(scene,view,modelpath,string,num,event_pos,layoutPt):
         layoutPt.drawLine_arrow(False)
         #Dropping is on compartment then update Compart size
         mooseCmpt = findCompartment(mobj)
-        if isinstance(mooseCmpt,moose.ChemCompt):
-            compt = layoutPt.qGraCompt[moose.element(mooseCmpt)]
+        if isinstance(mooseCmpt,self.moose.ChemCompt):
+            compt = layoutPt.qGraCompt[self.moose.element(mooseCmpt)]
             updateCompartmentSize(compt)
 
     elif  string == "Enz" or string == "MMenz":
@@ -182,9 +182,9 @@ def checkCreate(scene,view,modelpath,string,num,event_pos,layoutPt):
             enzparent = findCompartment(mobj)
             parentcompt = layoutPt.qGraCompt[enzparent]
         if string == "Enz":
-            enzObj = moose.Enz(moose.element(mobj).path+'/'+string_num)
-            enzinfo = moose.Annotator(enzObj.path+'/info')
-            moose.connect( enzObj, 'enz', mobj, 'reac' )
+            enzObj = self.moose.Enz(self.moose.element(mobj).path+'/'+string_num)
+            enzinfo = self.moose.Annotator(enzObj.path+'/info')
+            self.moose.connect( enzObj, 'enz', mobj, 'reac' )
             qGItem = EnzItem(enzObj,parentcompt)
             layoutPt.mooseId_GObj[enzObj] = qGItem
             posWrtComp = pos
@@ -194,17 +194,17 @@ def checkCreate(scene,view,modelpath,string,num,event_pos,layoutPt):
                 enzinfo.x = posWrtComp.x()
                 enzinfo.y = posWrtComp.y()
             enzinfo.color = str(bgcolor.name())
-            e = moose.Annotator(enzinfo)
+            e = self.moose.Annotator(enzinfo)
             e.x = posWrtComp.x()
             e.y = posWrtComp.y()
             Enz_cplx = enzObj.path+'/'+string_num+'_cplx';
-            cplxItem = moose.Pool(Enz_cplx)
-            cplxinfo = moose.Annotator(cplxItem.path+'/info')
+            cplxItem = self.moose.Pool(Enz_cplx)
+            cplxinfo = self.moose.Annotator(cplxItem.path+'/info')
             qGEnz = layoutPt.mooseId_GObj[enzObj]
             qGItem = CplxItem(cplxItem,qGEnz)
             layoutPt.mooseId_GObj[cplxItem] = qGItem
             enzboundingRect = qGEnz.boundingRect()
-            moose.connect( enzObj, 'cplx', cplxItem, 'reac' )
+            self.moose.connect( enzObj, 'cplx', cplxItem, 'reac' )
             qGItem.setDisplayProperties(enzboundingRect.height()/2,enzboundingRect.height()-40,QtGui.QColor('white'),QtGui.QColor('white'))
             cplxinfo.x = enzboundingRect.height()/2
             cplxinfo.y = enzboundingRect.height()-60
@@ -213,7 +213,7 @@ def checkCreate(scene,view,modelpath,string,num,event_pos,layoutPt):
         else:
             enzObj = moose.MMenz(mobj.path+'/'+string_num)
             enzinfo = moose.Annotator(enzObj.path+'/info')
-            moose.connect(mobj,"nOut",enzObj,"enzDest")
+            self.moose.connect(mobj,"nOut",enzObj,"enzDest")
             qGItem = MMEnzItem(enzObj,parentcompt)
             posWrtComp = pos
             bgcolor = getRandColor()
@@ -226,7 +226,7 @@ def checkCreate(scene,view,modelpath,string,num,event_pos,layoutPt):
         setupItem(modelpath.path,layoutPt.srcdesConnection)
         layoutPt.drawLine_arrow(False)
         #Dropping is on compartment then update Compart size
-        if isinstance(enzparent,moose.ChemCompt):
+        if isinstance(enzparent,self.moose.ChemCompt):
             updateCompartmentSize(parentcompt)
 
 def createObj(scene,view,modelpath,string,pos,layoutPt):
@@ -234,7 +234,7 @@ def createObj(scene,view,modelpath,string,pos,layoutPt):
     num = ''
     pos = view.mapToScene(event_pos)
     itemAt = view.sceneContainerPt.itemAt(pos)
-    chemMesh = moose.wildcardFind(modelpath+'/##[ISA=ChemCompt]')
+    chemMesh = self.moose.wildcardFind(modelpath+'/##[ISA=ChemCompt]')
     deleteSolver(modelpath)
     if len(chemMesh) and (string == "CubeMesh" or string == "CylMesh"):
         QtGui.QMessageBox.information(None,'Drop Not possible','At present model building allowed only for  single compartment.',QtGui.QMessageBox.Ok)
@@ -275,4 +275,4 @@ def findCompartment(mooseObj):
     elif isinstance(mooseObj,ChemCompt):
         return (mooseObj)
     else:
-        return findCompartment(moose.element(mooseObj.parent))
+        return findCompartment(self.moose.element(mooseObj.parent))

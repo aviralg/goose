@@ -1,15 +1,15 @@
-import moose
 import numpy as np
 import networkx as nx
 from collections import Counter
 
-def xyPosition(objInfo,xory):
+def xyPosition(objInfo,xory,moose):
     try:
         return(float(moose.element(objInfo).getField(xory)))
     except ValueError:
         return (float(0))
 
-def setupMeshObj(modelRoot):
+#def setupMeshObj(modelRoot):
+def setupMeshObj(instance):
     ''' Setup compartment and its members pool,reaction,enz cplx under self.meshEntry dictionaries \
     self.meshEntry with "key" as compartment,
     value is key2:list where key2 represents moose object type,list of objects of a perticular type
@@ -19,6 +19,8 @@ def setupMeshObj(modelRoot):
     xmax = 1.0
     ymin = 0.0
     ymax = 1.0
+    modelRoot = instance['model'].path
+    moose = instance['moose']
     positionInfoExist = True
     meshEntry = {}
     if meshEntry:
@@ -27,6 +29,8 @@ def setupMeshObj(modelRoot):
         meshEntry = {}
     xcord = []
     ycord = []
+    print "kkitOrdinateUtil 32",moose
+    print "\n modelRoot",
     print(modelRoot)
     meshEntryWildcard = '/##[ISA=ChemCompt]'
     if modelRoot != '/':
@@ -56,13 +60,13 @@ def setupMeshObj(modelRoot):
                 elif isinstance(moose.element(m),moose.PoolBase):
                     mollist.append(m)
                     objInfo =m.path+'/info'
-                xcord.append(xyPosition(objInfo,'x'))
-                ycord.append(xyPosition(objInfo,'y'))
+                xcord.append(xyPosition(objInfo,'x',moose))
+                ycord.append(xyPosition(objInfo,'y',moose))
 
-            getxyCord(xcord,ycord,funclist)
-            getxyCord(xcord,ycord,enzlist)
-            getxyCord(xcord,ycord,realist)
-            getxyCord(xcord,ycord,tablist)
+            getxyCord(xcord,ycord,funclist,moose)
+            getxyCord(xcord,ycord,enzlist,moose)
+            getxyCord(xcord,ycord,realist,moose)
+            getxyCord(xcord,ycord,tablist,moose)
 
             meshEntry[meshEnt] = {'enzyme':enzlist,
                                   'reaction':realist,
@@ -81,7 +85,8 @@ def setupMeshObj(modelRoot):
 
 def sizeHint(self):
     return QtCore.QSize(800,400)
-def getxyCord(xcord,ycord,list1):
+def getxyCord(xcord,ycord,list1,instance):
+    moose = instance
     for item in list1:
         # if isinstance(item,Function):
         #     objInfo = moose.moose.element(item.parent).path+'/info'
@@ -89,14 +94,17 @@ def getxyCord(xcord,ycord,list1):
         #     objInfo = item.path+'/info'
         if not isinstance(item,moose.Function):
             objInfo = item.path+'/info'
-            xcord.append(xyPosition(objInfo,'x'))
-            ycord.append(xyPosition(objInfo,'y'))
-
-def setupItem(modelPath,cntDict):
+            xcord.append(xyPosition(objInfo,'x',moose))
+            ycord.append(xyPosition(objInfo,'y',moose))
+#def setupItem(modelPath,cntDict):
+def setupItem(instance,cntDict):
     '''This function collects information of what is connected to what. \
     eg. substrate and product connectivity to reaction's and enzyme's \
     sumtotal connectivity to its pool are collected '''
     #print " setupItem"
+    moose = instance['moose']
+    modelPath = instance['model'].path
+    print "kkitOrdinateUtil 106 ",modelPath
     sublist = []
     prdlist = []
     zombieType = ['ReacBase','EnzBase','Function','StimulusTable']
@@ -108,25 +116,25 @@ def setupItem(modelPath,cntDict):
             for items in moose.wildcardFind(path):
                 sublist = []
                 prdlist = []
-                uniqItem,countuniqItem = countitems(items,'subOut')
+                uniqItem,countuniqItem = countitems(items,'subOut',moose)
                 for sub in uniqItem:
                     sublist.append((moose.element(sub),'s',countuniqItem[sub]))
 
-                uniqItem,countuniqItem = countitems(items,'prd')
+                uniqItem,countuniqItem = countitems(items,'prd',moose)
                 for prd in uniqItem:
                     prdlist.append((moose.element(prd),'p',countuniqItem[prd]))
 
                 if (baseObj == 'CplxEnzBase') :
-                    uniqItem,countuniqItem = countitems(items,'toEnz')
+                    uniqItem,countuniqItem = countitems(items,'toEnz',moose)
                     for enzpar in uniqItem:
                         sublist.append((moose.element(enzpar),'t',countuniqItem[enzpar]))
 
-                    uniqItem,countuniqItem = countitems(items,'cplxDest')
+                    uniqItem,countuniqItem = countitems(items,'cplxDest',moose)
                     for cplx in uniqItem:
                         prdlist.append((moose.element(cplx),'cplx',countuniqItem[cplx]))
 
                 if (baseObj == 'EnzBase'):
-                    uniqItem,countuniqItem = countitems(items,'enzDest')
+                    uniqItem,countuniqItem = countitems(items,'enzDest',moose)
                     for enzpar in uniqItem:
                         sublist.append((moose.element(enzpar),'t',countuniqItem[enzpar]))
                 cntDict[items] = sublist,prdlist
@@ -135,11 +143,11 @@ def setupItem(modelPath,cntDict):
                 sublist = []
                 prdlist = []
                 item = items.path+'/x[0]'
-                uniqItem,countuniqItem = countitems(item,'input')
+                uniqItem,countuniqItem = countitems(item,'input',moose)
                 for funcpar in uniqItem:
                     sublist.append((moose.element(funcpar),'sts',countuniqItem[funcpar]))
 
-                uniqItem,countuniqItem = countitems(items,'valueOut')
+                uniqItem,countuniqItem = countitems(items,'valueOut',moose)
                 for funcpar in uniqItem:
                     prdlist.append((moose.element(funcpar),'stp',countuniqItem[funcpar]))
                 cntDict[items] = sublist,prdlist
@@ -161,12 +169,12 @@ def setupItem(modelPath,cntDict):
         else:
             for tab in moose.wildcardFind(path):
                 tablist = []
-                uniqItem,countuniqItem = countitems(tab,'output')
+                uniqItem,countuniqItem = countitems(tab,'output',moose)
                 for tabconnect in uniqItem:
                     tablist.append((moose.element(tabconnect),'tab',countuniqItem[tabconnect]))
                 cntDict[tab] = tablist
 
-def countitems(mitems,objtype):
+def countitems(mitems,objtype,moose):
     items = []
     #print "mitems in countitems ",mitems,objtype
     items = moose.element(mitems).neighbors[objtype]
@@ -174,9 +182,11 @@ def countitems(mitems,objtype):
     countuniqItems = Counter(items)
     return(uniqItems,countuniqItems)
 
-def autoCoordinates(meshEntry,srcdesConnection):
+#def autoCoordinates(meshEntry,srcdesConnection):
+def autoCoordinates(meshEntry,srcdesConnection,instance):
     #for cmpt,memb in meshEntry.items():
     #    print memb
+    moose = instance
     xmin = 0.0
     xmax = 1.0
     ymin = 0.0

@@ -31,6 +31,10 @@ RESET_SIMULATION_ICON_PATH          = pkg_resources.resource_filename(
     goose.__name__ , "data/icons/stop.svg"
                                                                      )
 
+FUNCTION_IMAGE_PATH                 = pkg_resources.resource_filename(
+    goose.__name__ , "data/images/Function.png"
+                                                                     )
+
 
 EXTENSIONS          = { "SBML"      :   ["xml"]
                       , "Python"    :   ["py"]

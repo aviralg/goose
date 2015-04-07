@@ -73,7 +73,8 @@ class MainWindow(QMainWindow):
     def __init__(self, application, goose_log_directory, models):
         super(MainWindow, self).__init__()
         self.goose_log_directory = goose_log_directory
-        self.models       = {}
+        self.instances       = {}
+        self.instance        = None
         self._application = application
         self._setup_main_window()
         self._setup_central_widget()
@@ -285,7 +286,7 @@ class MainWindow(QMainWindow):
     def unique_modelname(self, filename):
         temp = modelname = self.modelname(filename)
         index = 0
-        while temp in self.models:
+        while temp in self.instances:
             index += 1
             temp = modelname + "[" + str(index) + "]"
         return modelname
@@ -298,7 +299,7 @@ class MainWindow(QMainWindow):
             modelname = self.unique_modelname(filename)
             connection.modules.moose.loadModel(filename, modelname)
             INFO("Loaded " + modelname)
-            self.current_model = self.models[modelname] = \
+            self.instance = self.instances[modelname] = \
                 { "conn"     :   connection
                 , "moose"    :   connection.modules.moose
                 , "pid"      :   pid
@@ -311,9 +312,7 @@ class MainWindow(QMainWindow):
             sys.modules["moose"] = connection.modules.moose
             import widgets.kkit
             DEBUG(id(connection.modules.moose))
-            widget = widgets.kkit.KineticsWidget( QtCore.QSize(624 ,468)
-                                                , self.current_model
-                                                )
+            widget = widgets.kkit.KineticsWidget(self.instance)
             self.centralWidget().addSubWindow(widget)
             widget.show()
 
@@ -328,7 +327,7 @@ class MainWindow(QMainWindow):
         self.connect_to_moose_server(host, port, pid, filename)
 
     def stop_moose_servers(self):
-        for modelname, info in self.models.items():
+        for modelname, info in self.instances.items():
             INFO("Closing Moose server on " + info["host"] + ":" + str(info["port"]))
             os.kill(info["pid"], signal.SIGTERM)
 

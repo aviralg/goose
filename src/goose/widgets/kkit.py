@@ -38,16 +38,24 @@ class  KineticsWidget(QtGui.QWidget):
 
         if self.moose.wildcardFind(self.modelRoot+'/##[ISA=ChemCompt]'):
             #compartment and its members are setup
-            self.meshEntry,self.xmin,self.xmax,self.ymin,self.ymax,self.positionInfoExist = setupMeshObj(self.modelRoot)
+            #self.meshEntry,self.xmin,self.xmax,self.ymin,self.ymax,self.positionInfoExist = setupMeshObj(self.modelRoot)
+            self.meshEntry,self.xmin,self.xmax,self.ymin,self.ymax,self.positionInfoExist = setupMeshObj(self.instance)
             print(self.meshEntry)
             #This function collects information of what is connected to what. e.g which Sub/Prd connected to Enz/Reac \
-            setupItem(self.modelRoot,self.srcdesConnection)
+            #setupItem(self.modelRoot,self.srcdesConnection)
+            setupItem(self.instance,self.srcdesConnection)
             if not self.positionInfoExist:
-                self.xmin,self.xmax,self.ymin,self.ymax,self.autoCordinatepos = autoCoordinates(self.meshEntry,self.srcdesConnection)
+                #self.xmin,self.xmax,self.ymin,self.ymax,self.autoCordinatepos = autoCoordinates(self.meshEntry,self.srcdesConnection)
+                self.xmin,self.xmax,self.ymin,self.ymax,self.autoCordinatepos = autoCoordinates(self.meshEntry,self.srcdesConnection,self.moose)
 
-    def resizeEvent(event):
-        self.size = event.size
-        if moose.wildcardFind(self.modelRoot+'/##[ISA=ChemCompt]'):
+    # def resizeEvent(self,event):
+        self.sceneContainer.clear()
+        print " resizeEvent"
+        #self.size = event.size()
+        #print " size in kkit ",self.size
+        self.size = QtCore.QSize(624 ,468)
+
+        if self.moose.wildcardFind(self.modelRoot+'/##[ISA=ChemCompt]'):
             if self.xmax-self.xmin != 0:
                 self.xratio = (self.size.width()-10)/(self.xmax-self.xmin)
             else: self.xratio = self.size.width()-10
@@ -62,10 +70,10 @@ class  KineticsWidget(QtGui.QWidget):
             self.mooseObjOntoscene()
             self.drawLine_arrow()
 
-        self.view = GraphicalView(self.modelRoot,self.sceneContainer,self.border,self,self.createdItem)
+        self.view = GraphicalView(self.sceneContainer,self.border,self,self.createdItem,self.instance)
         self.view.setAcceptDrops(True)
-        self.view.fitInView(self.sceneContainer.itemsBoundingRect().x()-10,self.sceneContainer.itemsBoundingRect().y()-10,self.sceneContainer.itemsBoundingRect().width()+20,self.sceneContainer.itemsBoundingRect().height()+20,Qt.Qt.IgnoreAspectRatio)
-        self.view.show()
+        # self.view.fitInView(self.sceneContainer.itemsBoundingRect().x()-10,self.sceneContainer.itemsBoundingRect().y()-10,self.sceneContainer.itemsBoundingRect().width()+20,self.sceneContainer.itemsBoundingRect().height()+20,Qt.Qt.IgnoreAspectRatio)
+        # self.view.show()
         self.layout().addWidget(self.view)
 
     def mooseObjOntoscene(self):
@@ -141,13 +149,13 @@ class  KineticsWidget(QtGui.QWidget):
         return PoolItem(poolObj, qGraCompt)
 
     def setupDisplay(self,info,graphicalObj,objClass):
-        Annoinfo = Annotator(info)
+        Annoinfo = self.moose.Annotator(info)
         # For Reaction and Complex object I have skipped the process to get the facecolor and background color as \
         #    we are not using these colors for displaying the object so just passing dummy color white
         if( objClass == "reaction"  or objClass == "cplx" or objClass == "Function" or objClass == "StimulusTable"):
             textcolor,bgcolor = "white","white"
         else:
-            textcolor,bgcolor = getColor(info)
+            textcolor,bgcolor = getColor(info,self.moose)
             if bgcolor.name() == "#ffffff" or bgcolor == "white":
                 bgcolor = getRandColor()
                 Annoinfo.color = str(bgcolor.name())
@@ -268,7 +276,7 @@ class  KineticsWidget(QtGui.QWidget):
             elif(endtype != 'cplx'):
                 p1 = (next((k for k,v in self.mooseId_GObj.items() if v == src), None))
                 pinfo = p1.path+'/info'
-                color,bgcolor = getColor(pinfo)
+                color,bgcolor = getColor(pinfo,self.moose)
                 #color = QColor(color[0],color[1],color[2])
                 pen.setColor(color)
         elif isinstance(source, self.moose.PoolBase) or isinstance(source,self.moose.Function):
