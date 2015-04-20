@@ -1,11 +1,16 @@
+from common import *
 #from moose import Annotator
 from PyQt4.QtGui import QColor
 import numpy as np
-import os
+#import os
+#import config
 import pickle
-from goose.utils import *
 from random import randint
 
+
+# colormap_file = open(os.path.join(config.settings[config.KEY_COLORMAP_DIR], 'rainbow2.pkl'),'rb')
+# colorMap = pickle.load(colormap_file)
+# colormap_file.close()
 colormap_file = open(RAINBOW_COLORMAP_PATH,'rb')
 colorMap = pickle.load(colormap_file)
 colormap_file.close()
@@ -58,10 +63,10 @@ def colorCheck(fc_bgcolor,fcbg):
     return(fc_bgcolor)
 
 def validColorcheck(color):
-	'''
+	''' 
         Both in Qt4.7 and 4.8 if not a valid color it makes it as back but in 4.7 there will be a warning mssg which is taken here
         checking if textcolor or backgroundcolor is valid color, if 'No' making white color as default
-        where I have not taken care for checking what will be backgroundcolor for textcolor or textcolor for backgroundcolor
+        where I have not taken care for checking what will be backgroundcolor for textcolor or textcolor for backgroundcolor 
         '''
         if QColor(color).isValid():
             return (QColor(color))

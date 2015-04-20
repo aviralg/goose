@@ -38,7 +38,18 @@ FUNCTION_IMAGE_PATH                 = pkg_resources.resource_filename(
 RAINBOW_COLORMAP_PATH               = pkg_resources.resource_filename(
     goose.__name__ , "data/colormaps/rainbow.pkl"
                                                                      )
-
+PLOT_ICON_PATH          = pkg_resources.resource_filename(
+    goose.__name__ , "data/icons/plot.svg"
+                                                                      )
+CLONE_ICON_PATH          = pkg_resources.resource_filename(
+    goose.__name__ , "data/icons/clone.svg"
+                                                                      )
+DELETE_ICON_PATH          = pkg_resources.resource_filename(
+    goose.__name__ , "data/icons/delete.svg"
+                                                                      )
+MOVE_ICON_PATH          = pkg_resources.resource_filename(
+    goose.__name__ , "data/icons/move.svg"
+                                                                      )
 EXTENSIONS          = { "SBML"      :   ["xml"]
                       , "Python"    :   ["py"]
                       , "CSPACE"    :   ["cspace"]

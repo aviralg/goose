@@ -1,17 +1,18 @@
 #import moose
 
-def deleteSolver(modelRoot):
-	if self.moose.wildcard(modelRoot+'/##[ISA=ChemCompt]'):
-		compt = self.moose.wildcard(modelRoot+'/##[ISA=ChemCompt]')
+def deleteSolver(modelRoot,moose):
+	moose = moose
+	if moose.wildcardFind(modelRoot+'/##[ISA=ChemCompt]'):
+		compt = moose.wildcardFind(modelRoot+'/##[ISA=ChemCompt]')
 		if ( moose.exists( compt[0].path+'/stoich' ) ):
 			st = moose.element(compt[0].path+'/stoich')
 			if moose.exists((st.ksolve).path):
 				moose.delete(st.ksolve)
 			moose.delete( compt[0].path+'/stoich' )
-	for x in self.moose.wildcard( modelRoot+'/data/graph#/#' ):
+	for x in moose.wildcardFind( modelRoot+'/data/graph#/#' ):
                 x.tick = -1
 def addSolver(modelRoot,solver):
-	compt = self.moose.wildcard(modelRoot+'/##[ISA=ChemCompt]')
+	compt = moose.wildcardFind(modelRoot+'/##[ISA=ChemCompt]')
 	comptinfo = moose.Annotator(moose.element(compt[0]).path+'/info')
 	previousSolver = comptinfo.solver
 	currentSolver = previousSolver
@@ -47,7 +48,7 @@ def addSolver(modelRoot,solver):
 			return True
 	return False
 def setCompartmentSolver(modelRoot,solver):
-	compt = self.moose.wildcard(modelRoot+'/##[ISA=ChemCompt]')
+	compt = moose.wildcardFind(modelRoot+'/##[ISA=ChemCompt]')
 	if ( solver == 'gsl' ) or (solver == 'Runge Kutta'):
 		ksolve = moose.Ksolve( compt[0].path+'/ksolve' )
 	if ( solver == 'gssa' ) or (solver == 'Gillespie'):
@@ -57,5 +58,5 @@ def setCompartmentSolver(modelRoot,solver):
 		stoich.compartment = compt[0]
 		stoich.ksolve = ksolve
 		stoich.path = compt[0].path+"/##"
-	for x in self.moose.wildcard( modelRoot+'/data/graph#/#' ):
+	for x in moose.wildcardFind( modelRoot+'/data/graph#/#' ):
 		x.tick = 18

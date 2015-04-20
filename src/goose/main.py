@@ -8,14 +8,16 @@ import socket
 import errno
 import itertools
 import widgets
-from .utils   import *
+from utils import *
 from PyQt4 import Qt, QtCore, QtGui
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 import signal
 from scheduler import SchedulingWidget
 import widgets
-import widgets.kkit
+from widgets import kkit
+from widgets.kkit.kkit import KineticsWidget
+
 # from win32process import DETACHED_PROCESS, CREATE_NEW_PROCESS_GROUP
 # print(QtCore.PYQT_VERSION_STR)
 # rpyc.classic.connect("0.0.0.0", "1000", keepalive = True)
@@ -89,7 +91,7 @@ class MainWindow(QMainWindow):
         [self.load_slot(model) for model in models]
 
     def _setup_main_window(self):
-        self.setWindowTitle("Moose")
+        self.setWindowTitle("GOOSE")
         self.setWindowFlags(self.windowFlags()
                            | QtCore.Qt.WindowContextHelpButtonHint
                            | QtCore.Qt.CustomizeWindowHint
@@ -99,7 +101,6 @@ class MainWindow(QMainWindow):
         self.setDockOptions( QMainWindow.AnimatedDocks
                            | QMainWindow.AllowNestedDocks
                            | QMainWindow.AllowTabbedDocks
-                           | QMainWindow.ForceTabbedDocks
                            | QMainWindow.VerticalTabs
                            )
         self.setWindowIcon(QIcon(APPLICATION_ICON_PATH))
@@ -113,7 +114,6 @@ class MainWindow(QMainWindow):
         widget = MdiArea()
         self.setCentralWidget(widget)
         # self.centralWidget.tileSubWindows()
-        widget.setViewMode(QMdiArea.TabbedView)
         widget.setDocumentMode(True)
         # self.setWindowState(QtCore.Qt.WindowFullScreen)
         # self.showFullScreen()
@@ -162,11 +162,29 @@ class MainWindow(QMainWindow):
             action.setShortcutContext(QtCore.Qt.ApplicationShortcut)
             return action
 
+        def create_toggle_fullscreen_action():
+            action = QAction("Enter Full Screen", self)
+            action.setShortcut(QKeySequence(QtCore.Qt.Key_F11))
+            action.setShortcutContext(QtCore.Qt.ApplicationShortcut)
+            return action
+
+        def create_toggle_window_arrangement_action():
+            action = QAction("Tabbed View", self)
+            return action
+
+        def create_toggle_menubar_action():
+            action = QAction("Hide Menu Bar", self)
+            action.setShortcut(QKeySequence(QtCore.Qt.Key_F10))
+            action.setShortcutContext(QtCore.Qt.ApplicationShortcut)            
+            return action
+
         self.new_action     = create_new_action()
         self.open_action    = create_open_action()
         self.connect_action = create_connect_action()
         self.quit_action    = create_quit_action()
-
+        self.toggle_fullscreen_action = create_toggle_fullscreen_action()
+        self.toggle_window_arrangement_action = create_toggle_window_arrangement_action()
+        self.toggle_menubar_action = create_toggle_menubar_action()
 
     def print_simulation_data(self, data):
         import pprint
@@ -191,6 +209,29 @@ class MainWindow(QMainWindow):
                       }
         self.simulation_run.connect(self.print_simulation_data)
         self.open_action.triggered.connect(self.open_slot)
+        self.quit_action.triggered.connect(self._application.exit)
+        self.connect_action.triggered.connect(self.connect_slot)
+        self.toggle_window_arrangement_action.triggered.connect(self.toggle_window_arrangement_slot)
+        self.toggle_fullscreen_action.triggered.connect(self.toggle_fullscreen_slot)
+        self.toggle_menubar_action.triggered.connect(self.toggle_menubar_slot)
+
+    @pyqtSlot(object)
+    def toggle_menubar_slot(self):
+        if self.menuBar().isVisible(): self.menuBar().hide()
+        else: self.menuBar().show()
+
+    @pyqtSlot(object)
+    def toggle_window_arrangement_slot(self):
+        if self.centralWidget().viewMode() == QMdiArea.SubWindowView:
+            self.centralWidget().setViewMode(QMdiArea.TabbedView)
+            self.toggle_window_arrangement_action.setText("Sub Window View")
+        else:
+            self.centralWidget().setViewMode(QMdiArea.SubWindowView)
+            self.toggle_window_arrangement_action.setText("Tabbed View")
+
+    @pyqtSlot(object)
+    def toggle_fullscreen_slot(self):
+        self.setWindowState(self.windowState() ^ Qt.WindowFullScreen)
 
     def _setup_menubar(self):
 
@@ -198,13 +239,14 @@ class MainWindow(QMainWindow):
             menu = menubar.addMenu("File")
             menu.addAction(self.new_action)
             menu.addAction(self.open_action)
+            menu.addAction(self.connect_action)
             menu.addAction(self.quit_action)
             return menu
 
         def create_view_menu(menubar):
             menu = menubar.addMenu("View")
             menu.addAction(self.toggle_fullscreen_action)
-            menu.addAction(self.hide_menubar_action)
+            menu.addAction(self.toggle_menubar_action)
             menu.addAction(self.toggle_window_arrangement_action)
             return menu
 
@@ -218,7 +260,7 @@ class MainWindow(QMainWindow):
 
         menubar = self.menuBar()
         create_file_menu(menubar)
-        # create_view_menu(menubar)
+        create_view_menu(menubar)
         # create_help_menu(menubar)
 
         return menubar
@@ -311,7 +353,7 @@ class MainWindow(QMainWindow):
                 , "service"  :   connection.root
                 , "thread"   :   rpyc.BgServingThread(connection)
                 }
-            widget = widgets.kkit.KineticsWidget(self.instance)
+            widget = kkit.kkit.KineticsWidget(self.instance)
             self.centralWidget().addSubWindow(widget)
             widget.show()
 
@@ -325,8 +367,13 @@ class MainWindow(QMainWindow):
         (host, port, pid) = self.start_moose_server()
         self.connect_to_moose_server(host, port, pid, filename)
 
+    @pyqtSlot(object)
+    def quit_slot(self):
+        self.stop_moose_servers()
+
     def stop_moose_servers(self):
         for modelname, info in self.instances.items():
+            info["thread"].stop()
             INFO("Closing Moose server on " + info["host"] + ":" + str(info["port"]))
             os.kill(info["pid"], signal.SIGTERM)
 
@@ -343,6 +390,29 @@ class MainWindow(QMainWindow):
         # model in self.models:
         # self.models[model] =
 
+
+    @pyqtSlot(object)
+    def connect_slot(self):
+        connect_window = QDialog()
+        connect_window.setWindowTitle("Connect to moose instance.")
+        connect_window.setLayout(QGridLayout())
+        connect_window.layout().addWidget(QLabel("Hostname"), 0, 0)
+        connect_window.layout().addWidget(QLineEdit(), 0, 1)
+        connect_window.layout().addWidget(QLabel("Port"), 1, 0)
+        connect_window.layout().addWidget(QLineEdit(), 1, 1)
+        connect_button = QPushButton("Connect")
+        connect_button.setDefault(True)
+        connect_window.layout().addWidget(connect_button, 2, 1, Qt.AlignRight)
+        # connect_button.triggered.connect(
+        #     lambda : self.connect_to_moose_server(hostname)
+        #                                 )
+        # hostname.text()
+        # connect_window.exec_()   
+        # instance = self.start_instance_slot()
+        # self.connect_instance_slot()
+        # self.read_instance_slot()
+        # self.disconnect_instance_slot()
+        # self.close_instance_slot()
 
 
     @pyqtSlot(object)
@@ -368,8 +438,13 @@ class MainWindow(QMainWindow):
         dialog.setFileMode(QFileDialog.ExistingFiles)
         dialog.setNameFilters(nameFilters)
         files = dialog.selectedFiles() if dialog.exec_() else []
-        map(self.load_slot, files)
-
+        # self.progress_bar = QProgressBar()
+        # self.progress_bar.setRange(0,0)
+        # self.progress_bar.show()
+        for filename in files:
+                DEBUG(filename)
+                QTimer.singleShot(0, lambda target = filename: self.load_slot(target))
+        # map(self.load_slot, files)
         # menus["view"].addAction(createFullScreenAction(menubar, self))
         # menus["view"].addAction(createHideMenuBarAction(menubar, menubar))
         # menus["file"].addAction(createFileOpenAction)

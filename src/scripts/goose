@@ -9,6 +9,7 @@ from goose import *
 from PyQt4 import Qt, QtCore, QtGui
 from PyQt4.QtGui import *
 import imp
+import signal
 
 GOOSE_ROOT_DIRECTORY    = os.path.expanduser("~/.goose/")
 GOOSE_LOG               = "logs"
@@ -50,7 +51,9 @@ installation before running me."""
         sys.exit(0)
     window =  MainWindow(application, GOOSE_LOG_DIRECTORY ,sys.argv[1:])
     window.setWindowState(QtCore.Qt.WindowMaximized)
+    signal.signal(signal.SIGINT, lambda * args : window.quit_slot() )
     window.show()
+
     sys.exit(application.exec_())
 
 if __name__ == "__main__":

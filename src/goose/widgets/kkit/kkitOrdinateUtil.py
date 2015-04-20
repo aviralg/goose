@@ -1,7 +1,8 @@
+from common import *
 import numpy as np
 import networkx as nx
 from collections import Counter
-from goose.utils import *
+
 def xyPosition(objInfo,xory,moose):
     try:
         return(float(moose.element(objInfo).getField(xory)))
@@ -10,8 +11,9 @@ def xyPosition(objInfo,xory,moose):
 
 #def setupMeshObj(modelRoot):
 def setupMeshObj(instance):
-    ''' Setup compartment and its members pool,reaction,enz cplx under self.meshEntry dictionaries \
-    self.meshEntry with "key" as compartment,
+
+    ''' Setup compartment and its members pool,reaction,enz cplx under self.meshEntry dictionaries \ 
+    self.meshEntry with "key" as compartment, 
     value is key2:list where key2 represents moose object type,list of objects of a perticular type
     e.g self.meshEntry[meshEnt] = { 'reaction': reaction_list,'enzyme':enzyme_list,'pool':poollist,'cplx': cplxlist }
     '''
@@ -29,16 +31,11 @@ def setupMeshObj(instance):
         meshEntry = {}
     xcord = []
     ycord = []
-    # print "kkitOrdinateUtil 32",moose
-    # print "\n modelRoot",
-    # print(modelRoot)
+    
     meshEntryWildcard = '/##[ISA=ChemCompt]'
     if modelRoot != '/':
         meshEntryWildcard = modelRoot+meshEntryWildcard
-    # print("meshEntry ",meshEntryWildcard)
-    # print(id(moose))
     for meshEnt in moose.wildcardFind(meshEntryWildcard):
-        # print(" ###")
         mollist  = []
         realist  = []
         enzlist  = []
@@ -51,7 +48,6 @@ def setupMeshObj(instance):
         enzlist  = moose.wildcardFind(meshEnt.path+'/##[ISA=EnzBase]')
         realist  = moose.wildcardFind(meshEnt.path+'/##[ISA=ReacBase]')
         tablist  = moose.wildcardFind(meshEnt.path+'/##[ISA=StimulusTable]')
-        # print(mol_cpl)
         if mol_cpl or funclist or enzlist or realist or tablist:
             for m in mol_cpl:
                 if isinstance(moose.element(m.parent),moose.CplxEnzBase):
@@ -61,7 +57,7 @@ def setupMeshObj(instance):
                     mollist.append(m)
                     objInfo =m.path+'/info'
                 xcord.append(xyPosition(objInfo,'x',moose))
-                ycord.append(xyPosition(objInfo,'y',moose))
+                ycord.append(xyPosition(objInfo,'y',moose)) 
 
             getxyCord(xcord,ycord,funclist,moose)
             getxyCord(xcord,ycord,enzlist,moose)
@@ -85,6 +81,7 @@ def setupMeshObj(instance):
 
 def sizeHint(self):
     return QtCore.QSize(800,400)
+#def getxyCord(xcord,ycord,list1)
 def getxyCord(xcord,ycord,list1,instance):
     moose = instance
     for item in list1:
@@ -96,6 +93,7 @@ def getxyCord(xcord,ycord,list1,instance):
             objInfo = item.path+'/info'
             xcord.append(xyPosition(objInfo,'x',moose))
             ycord.append(xyPosition(objInfo,'y',moose))
+
 #def setupItem(modelPath,cntDict):
 def setupItem(instance,cntDict):
     '''This function collects information of what is connected to what. \
@@ -104,7 +102,7 @@ def setupItem(instance,cntDict):
     #print " setupItem"
     moose = instance['moose']
     modelPath = instance['model'].path
-    # DEBUG(modelPath)
+    DEBUG(modelPath)
     sublist = []
     prdlist = []
     zombieType = ['ReacBase','EnzBase','Function','StimulusTable']
@@ -117,18 +115,18 @@ def setupItem(instance,cntDict):
                 sublist = []
                 prdlist = []
                 uniqItem,countuniqItem = countitems(items,'subOut',moose)
-                for sub in uniqItem:
+                for sub in uniqItem: 
                     sublist.append((moose.element(sub),'s',countuniqItem[sub]))
 
                 uniqItem,countuniqItem = countitems(items,'prd',moose)
                 for prd in uniqItem:
                     prdlist.append((moose.element(prd),'p',countuniqItem[prd]))
-
+                
                 if (baseObj == 'CplxEnzBase') :
                     uniqItem,countuniqItem = countitems(items,'toEnz',moose)
                     for enzpar in uniqItem:
                         sublist.append((moose.element(enzpar),'t',countuniqItem[enzpar]))
-
+                    
                     uniqItem,countuniqItem = countitems(items,'cplxDest',moose)
                     for cplx in uniqItem:
                         prdlist.append((moose.element(cplx),'cplx',countuniqItem[cplx]))
@@ -146,7 +144,7 @@ def setupItem(instance,cntDict):
                 uniqItem,countuniqItem = countitems(item,'input',moose)
                 for funcpar in uniqItem:
                     sublist.append((moose.element(funcpar),'sts',countuniqItem[funcpar]))
-
+                
                 uniqItem,countuniqItem = countitems(items,'valueOut',moose)
                 for funcpar in uniqItem:
                     prdlist.append((moose.element(funcpar),'stp',countuniqItem[funcpar]))
@@ -182,11 +180,9 @@ def countitems(mitems,objtype,moose):
     countuniqItems = Counter(items)
     return(uniqItems,countuniqItems)
 
-#def autoCoordinates(meshEntry,srcdesConnection):
-def autoCoordinates(meshEntry,srcdesConnection,instance):
+def autoCoordinates(meshEntry,srcdesConnection):
     #for cmpt,memb in meshEntry.items():
     #    print memb
-    moose = instance
     xmin = 0.0
     xmax = 1.0
     ymin = 0.0
@@ -203,7 +199,7 @@ def autoCoordinates(meshEntry,srcdesConnection,instance):
             G.add_edge((cplxObj.parent).path,cplxObj.path)
         for reaObj in find_index(memb,'reaction'):
             G.add_node(reaObj.path)
-
+        
     for inn,out in srcdesConnection.items():
         if (inn.className =='ZombieReac'): arrowcolor = 'green'
         elif(inn.className =='ZombieEnz'): arrowcolor = 'red'
@@ -225,7 +221,7 @@ def autoCoordinates(meshEntry,srcdesConnection,instance):
             else:
                 for items in (items for items in out ):
                     G.add_edge(moose.element(items[0]).path,inn.path)
-
+    
     nx.draw(G,pos=nx.spring_layout(G))
     #plt.savefig('/home/harsha/Desktop/netwrokXtest.png')
     xcord = []
@@ -245,7 +241,7 @@ def autoCoordinates(meshEntry,srcdesConnection,instance):
         xmin = min(xcord)
         xmax = max(xcord)
         ymin = min(ycord)
-        ymax = max(ycord)
+        ymax = max(ycord)    	    
     return(xmin,xmax,ymin,ymax,position)
 
 def find_index(value, key):

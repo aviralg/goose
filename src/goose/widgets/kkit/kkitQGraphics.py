@@ -1,22 +1,27 @@
+
 from PyQt4 import QtGui, QtCore, Qt
 from PyQt4.QtGui import QPixmap, QImage, QGraphicsPixmapItem
 from constants import *
-from goose import *
-
+#import sys
+# sys.path.insert(0, '/home/harsha/goose/src/goose/')
+# from goose.utils import *
+#from ..utils import *
 class KineticsDisplayItem(QtGui.QGraphicsWidget):
     """Base class for display elemenets in kinetics layout"""
     name = ITEM
     def __init__(self, mooseObject, parent=None):
         QtGui.QGraphicsObject.__init__(self,parent)
         self.mobj = mooseObject
+        # self.moose = instance["moose"]
+        # self.modle = instance["model"]
         self.gobj = None
         self.pressed = False
         self.setFlag(QtGui.QGraphicsItem.ItemIsSelectable,True)
         self.setFlag(QtGui.QGraphicsItem.ItemIsMovable, True)
         self.setAcceptHoverEvents(True)
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
-        if QtCore.QT_VERSION >= 0x040600:
-            self.setFlag(QtGui.QGraphicsItem.ItemSendsGeometryChanges,1)
+        # if QtCore.QT_VERSION >= 0x040600:
+        #     self.setFlag(QtGui.QGraphicsItem.ItemSendsGeometryChanges,1)
         self.setFlag(QtGui.QGraphicsItem.ItemIgnoresTransformations, False)
 
     def getParentMooseObject(self):
@@ -27,7 +32,7 @@ class KineticsDisplayItem(QtGui.QGraphicsWidget):
 
     def setDisplayProperties(self, dinfo):
         self.setGeometry(dinfo.x, dinfo.y)
-
+   
     def paint(self, painter=None, option=None, widget = None):
         #If item is selected
         if self.hasFocus() or self.isSelected():
@@ -35,20 +40,20 @@ class KineticsDisplayItem(QtGui.QGraphicsWidget):
             painter.drawRect(self.boundingRect())
     # def mouseDoubleClickEvent(self, event):
     #     self.emit(QtCore.SIGNAL("qgtextDoubleClick(PyQt_PyObject)"),element(self.mobj))
-
+            
     def itemChange(self,change,value):
         #pass
         #if change == QtGui.QGraphicsItem.ItemPositionChange:
             #print "itemChange ---->",self.mobj
         #    self.emit(QtCore.SIGNAL("qgtextPositionChange(PyQt_PyObject)"),self.mobj)
         if change == QtGui.QGraphicsItem.ItemSelectedChange and value == True:
-           self.emit(QtCore.SIGNAL("qgtextItemSelectedChange(PyQt_PyObject)"),element(self.mobj))
+           self.emit(QtCore.SIGNAL("qgtextItemSelectedChange(PyQt_PyObject)"),self.moose.element(self.mobj))
         #print " itemChange ",self.mobj,change,value
         return QtGui.QGraphicsItem.itemChange(self,change,value)
 
 class FuncItem(KineticsDisplayItem):
     name = ITEM
-    """Class for displaying Functions"""
+    """Class for displaying Functions"""    
     #fontMetrics = None
     defaultFontsize = 12
     font =QtGui.QFont("Helvetica")
@@ -66,10 +71,12 @@ class FuncItem(KineticsDisplayItem):
         self.gobj.setAcceptHoverEvents(True)
         self.gobj.mobj = self.mobj
         classname = self.mobj.className
-        # funcdoc = (self.moose.element(self.mobj.path)).expr
-        # self.gobj.setToolTip(funcdoc)
-        #self.bg.setPen(Qt.QColor(100,100,10,10))
-
+        funcdoc = (self.mobj).expr
+        self.gobj.setToolTip(funcdoc)
+        #funcdoc = (self.moose.element(self.mobj.path)).expr
+        #self.gobj.setToolTip(funcdoc)
+        self.bg.setPen(Qt.QColor(100,100,10,10))
+        
     def setDisplayProperties(self,x,y,textcolor,bgcolor):
         """Set the display properties of this item."""
         #With Respect to BuffPool (parent) I am placing at 0,30 (which is below the BuffPool)
@@ -91,7 +98,7 @@ class FuncItem(KineticsDisplayItem):
         # #This func will adjust the background color with respect to text size
         # self.gobj.setText(self.mobj.name)
         # self.bg.setRect(0, 0, self.gobj.boundingRect().width()+PoolItem.fontMetrics.width('  '), self.gobj.boundingRect().height())
-
+    
     def updateColor(self,bgcolor):
         #self.bg.setBrush(QtGui.QBrush(QtGui.QColor(bgcolor)))
         pass
@@ -111,7 +118,7 @@ class FuncItem(KineticsDisplayItem):
         self.gobj.setToolTip(funcdoc)
         # self._gobj = gobj
         # #if type(self._gobj) is moose.ZombiePool:
-        # if (isinstance(self._gobj,self.moose.PoolBase)):
+        # if (isinstance(self._gobj,PoolBase)):
         #     self._conc = self.mobj.conc
         #     self._n    = self.mobj.n
         #     doc = "Conc\t: "+str(self._conc)+"\nn\t: "+str(self._n)
@@ -121,7 +128,7 @@ class FuncItem(KineticsDisplayItem):
 class PoolItem(KineticsDisplayItem):
     name = ITEM
     """Class for displaying pools. Uses a QGraphicsSimpleTextItem to
-    display the name."""
+    display the name."""    
     #fontMetrics = None
     defaultFontsize = 12
     font =QtGui.QFont("Helvetica")
@@ -135,7 +142,7 @@ class PoolItem(KineticsDisplayItem):
         self.gobj.mobj = self.mobj
         classname = self.mobj.className
         # classname = 'PoolBase'
-        # doc = self.moose.element('/classes/%s' % (classname)).docs
+        # doc = moose.element('/classes/%s' % (classname)).docs
         # print "docs ",self.gobj.mobj, " ",doc
         # doc = doc.split('Description:')[-1].split('Name:')[0].strip()
         self._conc = self.mobj.conc
@@ -145,21 +152,21 @@ class PoolItem(KineticsDisplayItem):
         self.gobj.setFont(PoolItem.font)
         if not PoolItem.fontMetrics:
             PoolItem.fontMetrics = QtGui.QFontMetrics(self.gobj.font())
-        self.bg.setRect(0,
-                        0,
+        self.bg.setRect(0, 
+                        0, 
                         self.gobj.boundingRect().width()
-                        +PoolItem.fontMetrics.width('  '),
+                        +PoolItem.fontMetrics.width('  '), 
                         self.gobj.boundingRect().height())
         self.bg.setPen(Qt.QColor(0,0,0,0))
         self.gobj.setPos(PoolItem.fontMetrics.width(' '), 0)
     def setDisplayProperties(self,x,y,textcolor,bgcolor):
         """Set the display properties of this item."""
-
+        
         self.setGeometry(x, y,self.gobj.boundingRect().width()
-                        +PoolItem.fontMetrics.width('  '),
+                        +PoolItem.fontMetrics.width('  '), 
                         self.gobj.boundingRect().height())
         self.bg.setBrush(QtGui.QBrush(bgcolor))
-
+    
     def refresh(self,scale):
         fontsize = PoolItem.defaultFontsize*scale
         font =QtGui.QFont("Helvetica")
@@ -174,7 +181,7 @@ class PoolItem(KineticsDisplayItem):
         #This func will adjust the background color with respect to text size
         self.gobj.setText(self.mobj.name)
         self.bg.setRect(0, 0, self.gobj.boundingRect().width()+PoolItem.fontMetrics.width('  '), self.gobj.boundingRect().height())
-
+    
     def updateColor(self,bgcolor):
         self.bg.setBrush(QtGui.QBrush(QtGui.QColor(bgcolor)))
         #pass
@@ -192,7 +199,7 @@ class PoolItem(KineticsDisplayItem):
     def updateValue(self,gobj):
         self._gobj = gobj
         #if type(self._gobj) is moose.ZombiePool:
-        if (isinstance(self._gobj,self.moose.PoolBase)):
+        if (isinstance(self._gobj,PoolBase)):
             self._conc = self.mobj.conc
             self._n    = self.mobj.n
             doc = "Conc\t: "+str(self._conc)+"\nn\t: "+str(self._n)
@@ -206,13 +213,13 @@ class PoolItemCircle(PoolItem):
         self.bgColor = QtGui.QGraphicsEllipseItem(self)
         self.bgColor.setFlag(QtGui.QGraphicsItem.ItemStacksBehindParent,True)
         self.bgColor.setRect(((self.gobj.boundingRect().width()+PoolItem.fontMetrics.width('  '))/2)-5,self.gobj.boundingRect().height()/2-5,10,10)
-
+    
     def setDisplayProperties(self,x,y,textcolor,bgcolor):
         self.setGeometry(x, y,self.gobj.boundingRect().width()
-                        +PoolItem.fontMetrics.width('  '),
+                        +PoolItem.fontMetrics.width('  '), 
                         self.gobj.boundingRect().height())
         self.bgColor.setBrush(QtGui.QBrush(QtGui.QColor(bgcolor.red(),bgcolor.green(),bgcolor.blue(),255)))
-
+        
     def updateRect(self,ratio):
         width = self.gobj.boundingRect().width()+PoolItem.fontMetrics.width('  ')
         height = self.gobj.boundingRect().height()
@@ -220,16 +227,16 @@ class PoolItemCircle(PoolItem):
         adjusth = height*ratio
         self.bgColor.setRect(width/2-abs(adjustw/2),height/2-abs(adjusth/2),adjustw, adjusth)
         self.updateValue(self.gobj)
-
+     
     def returnEllispeSize(self):
         self.bgColor.setRect(((self.gobj.boundingRect().width()+PoolItem.fontMetrics.width('  '))/2)-5,self.gobj.boundingRect().
             height()/2-5,10,10)
-
+    
     def refresh(self,scale):
         fontsize = PoolItem.defaultFontsize*scale
         font =QtGui.QFont("Helvetica")
         font.setPointSize(fontsize)
-        self.gobj.setFont(font)
+        self.gobj.setFont(font)    
 
     def MooseRef(self):
         return self.gobj.mobj
@@ -290,10 +297,10 @@ class TableItem(KineticsDisplayItem):
     def setDisplayProperties(self, x,y,textcolor,bgcolor):
         #TODO check the table bounding reactangle b'cos selection looks ugly
         """Set the display properties of this item."""
-        self.setGeometry(x,y,
-                         self.gobj.boundingRect().width(),
+        self.setGeometry(x,y, 
+                         self.gobj.boundingRect().width(), 
                          self.gobj.boundingRect().height())
-
+    
 class ReacItem(KineticsDisplayItem):
     defaultWidth = 30
     defaultHeight = 30
@@ -315,18 +322,18 @@ class ReacItem(KineticsDisplayItem):
         self.gobj.mobj = self.mobj
         #classname = self.mobj.className
         # classname = 'ReacBase'
-        # doc = self.moose.element('/classes/%s' % (classname)).docs
+        # doc = moose.element('/classes/%s' % (classname)).docs
         # print "docs ",self.gobj.mobj, " ",doc
         # doc = doc.split('Description:')[-1].split('Name:')[0].strip()
         self._Kf = self.gobj.mobj.Kf
         self._Kb = self.gobj.mobj.Kb
-        doc = "Kf\t: "+str(self._Kf)+"\nKb\t: "+str(self._Kb)
+        doc = "Kf\t: "+str(self._Kf)+"\nKb\t: "+str(self._Kb) 
         self.gobj.setToolTip(doc)
 
     def updateValue(self,gobj):
         self._gobj = gobj
         #if ( type(self._gobj) is moose.ZombieReac or type(self_gobj) is moose.Reac):
-        if (isinstance(self._gobj,self.moose.ReacBase)):
+        if (isinstance(self._gobj,ReacBase)):
             self._Kf = self._gobj.Kf
             self._Kb = self._gobj.Kb
             doc = "Kf\t: "+str(self._Kf)+"\nKb\t: "+str(self._Kb)
@@ -344,7 +351,7 @@ class ReacItem(KineticsDisplayItem):
         for p in points[1:]:
             path.lineTo(p)
             path.moveTo(p)
-
+                
         self.gobj.setPath(path)
         ReacPen = self.gobj.pen()
         defaultpenwidth = ReacItem.defaultPenWidth
@@ -353,43 +360,43 @@ class ReacItem(KineticsDisplayItem):
         self.gobj.setPen(ReacPen)
     def setDisplayProperties(self, x,y,textcolor,bgcolor):
         """Set the display properties of this item."""
-        self.setGeometry(x,y,
-                         self.gobj.boundingRect().width(),
+        self.setGeometry(x,y, 
+                         self.gobj.boundingRect().width(), 
                          self.gobj.boundingRect().height())
 
 class EnzItem(KineticsDisplayItem):
     defaultWidth = 20
-    defaultHeight = 10
-    name = ITEM
+    defaultHeight = 10 
+    name = ITEM   
     def __init__(self, *args, **kwargs):
         KineticsDisplayItem.__init__(self, *args, **kwargs)
-        self.gobj = QtGui.QGraphicsEllipseItem(0, 0,
-                                            EnzItem.defaultWidth,
+        self.gobj = QtGui.QGraphicsEllipseItem(0, 0, 
+                                            EnzItem.defaultWidth, 
                                             EnzItem.defaultHeight, self)
         self.gobj.mobj = self.mobj
         # classname = 'EnzBase'
-        # doc = self.moose.element('/classes/%s' % (classname)).docs
+        # doc = moose.element('/classes/%s' % (classname)).docs
         # doc = doc.split('Description:')[-1].split('Name:')[0].strip()
         self._Km   = self.gobj.mobj.Km
         self._Kcat = self.gobj.mobj.kcat
-        doc = "Km\t: "+str(self._Km)+"\nKcat\t: "+str(self._Kcat)
+        doc = "Km\t: "+str(self._Km)+"\nKcat\t: "+str(self._Kcat) 
         self.gobj.setToolTip(doc)
 
     def updateValue(self,gobj):
         self._gobj = gobj
-        if ( isinstance(self.gobj,self.moose.EnzBase)):
+        if ( isinstance(self.gobj,EnzBase)):
             self._Km = self._gobj.Km
             self._Kcat = self._gobj.kcat
             doc = "Km\t: "+str(self._Km)+"\nKcat\t: "+str(self._Kcat)
             self.gobj.setToolTip(doc)
 
     def updateColor(self,bgcolor):
-        self.gobj.setBrush(QtGui.QBrush(QtGui.QColor(bgcolor)))
+        self.gobj.setBrush(QtGui.QBrush(QtGui.QColor(bgcolor)))        
 
     def setDisplayProperties(self,x,y,textcolor,bgcolor):
         """Set the display properties of this item."""
-        self.setGeometry(x,y,
-                          self.gobj.boundingRect().width(),
+        self.setGeometry(x,y, 
+                          self.gobj.boundingRect().width(), 
                           self.gobj.boundingRect().height())
         self.gobj.setBrush(QtGui.QBrush(bgcolor))
 
@@ -406,7 +413,7 @@ class MMEnzItem(EnzItem):
 class CplxItem(KineticsDisplayItem):
     defaultWidth = 10
     defaultHeight = 10
-    name = ITEM
+    name = ITEM    
     def __init__(self, *args, **kwargs):
         KineticsDisplayItem.__init__(self, *args, **kwargs)
         self.gobj = QtGui.QGraphicsRectItem(0,0, CplxItem.defaultWidth, CplxItem.defaultHeight, self)
@@ -418,7 +425,7 @@ class CplxItem(KineticsDisplayItem):
 
     def updateValue(self,gobj):
         self._gobj = gobj
-        if (isinstance(self._gobj,self.moose.PoolBase)):
+        if (isinstance(self._gobj,PoolBase)):
             self._conc = self.mobj.conc
             self._n    = self.mobj.n
             doc = "Conc\t: "+str(self._conc)+"\nn\t: "+str(self._n)
@@ -426,15 +433,15 @@ class CplxItem(KineticsDisplayItem):
 
     def setDisplayProperties(self,x,y,textcolor,bgcolor):
         """Set the display properties of this item."""
-        self.setGeometry(self.gobj.boundingRect().width()/2,self.gobj.boundingRect().height(),
-                         self.gobj.boundingRect().width(),
+        self.setGeometry(self.gobj.boundingRect().width()/2,self.gobj.boundingRect().height(), 
+                         self.gobj.boundingRect().width(), 
                          self.gobj.boundingRect().height())
         self.setFlag(QtGui.QGraphicsItem.ItemIsMovable,False)
 
     def refresh(self,scale):
         defaultWidth = CplxItem.defaultWidth*scale
         defaultHeight = CplxItem.defaultHeight*scale
-
+	
         self.gobj.setRect(0,0,defaultWidth,defaultHeight)
 
 class ComptItem(QtGui.QGraphicsRectItem):
@@ -463,9 +470,9 @@ class ComptItem(QtGui.QGraphicsRectItem):
 
         self.setFlag(QtGui.QGraphicsItem.ItemIsMovable, True);
         self.setFlag(QtGui.QGraphicsItem.ItemIsSelectable)
-        #self.setFlag(QtGui.QGraphicsItem.ItemSendsGeometryChanges, 1)
-        # if QT_MINOR_VERSION >= 6:
-        #     self.setFlag(QtGui.QGraphicsItem.ItemSendsGeometryChanges, 1)
+        #self.setFlag(QtGui.QGraphicsItem.ItemSendsGeometryChanges, 1) 
+        # if config.QT_MINOR_VERSION >= 6:
+        #     self.setFlag(QtGui.QGraphicsItem.ItemSendsGeometryChanges, 1) 
     '''
     def hoverEnterEvent(self, event):
         self.updateResizeHandles()
@@ -498,13 +505,13 @@ class ComptItem(QtGui.QGraphicsRectItem):
         # Top left corner
         if self.topLeft.contains(event.scenePos()):
             self.mousePressArea = 'topleft'
-        # top right corner
+        # top right corner            
         elif self.topRight.contains(event.scenePos()):
             self.mousePressArea = 'topright'
-        #  bottom left corner
+        #  bottom left corner            
         elif self.bottomLeft.contains(event.scenePos()):
             self.mousePressArea = 'bottomleft'
-        # bottom right corner
+        # bottom right corner            
         elif self.bottomRight.contains(event.scenePos()):
             self.mousePressArea = 'bottomright'
         # entire rectangle
@@ -534,13 +541,13 @@ class ComptItem(QtGui.QGraphicsRectItem):
             # Move top left corner
             if self.mousePressArea=='topleft':
                 self._rect.setTopLeft(self.rectPress.topLeft()-(self.mousePressPos-self.mouseMovePos))
-            # Move top right corner
+            # Move top right corner            
             elif  self.mousePressArea=='topright':
                 self._rect.setTopRight(self.rectPress.topRight()-(self.mousePressPos-self.mouseMovePos))
-            # Move bottom left corner
+            # Move bottom left corner            
             elif  self.mousePressArea=='bottomleft':
                 self._rect.setBottomLeft(self.rectPress.bottomLeft()-(self.mousePressPos-self.mouseMovePos))
-            # Move bottom right corner
+            # Move bottom right corner            
             elif  self.mousePressArea=='bottomright':
                 self._rect.setBottomRight(self.rectPress.bottomRight()-(self.mousePressPos-self.mouseMovePos))
             # Move entire rectangle, don't resize
@@ -557,12 +564,12 @@ class ComptItem(QtGui.QGraphicsRectItem):
         Return bounding rectangle
         """
         return self._boundingRect
-
+    
     def updateResizeHandles(self):
         """
         Update bounding rectangle and resize handles
         """
-        self.offset = self.resizeHandleSize*(self._scene.sceneContainer.graphicsView.mapToScene(1,0)-self._scene.sceneContainer.graphicsView.mapToScene(0,1)).x()
+        self.offset = self.resizeHandleSize*(self._scene.sceneContainer.graphicsView.mapToScene(1,0)-self._scene.sceneContainer.graphicsView.mapToScene(0,1)).x()        
 
         self._boundingRect = self._rect.adjusted(-self.offset, self.offset, self.offset, -self.offset)
 
@@ -575,7 +582,7 @@ class ComptItem(QtGui.QGraphicsRectItem):
                                      2*self.offset, 2*self.offset)
         self.bottomRight = QtCore.QRectF(self._boundingRect.bottomRight().x() - 2*self.offset, self._boundingRect.bottomRight().y(),
                                      2*self.offset, 2*self.offset)
-
+    
     def paint(self, painter, option, widget):
         """
         Paint Widget
@@ -604,7 +611,7 @@ class ComptItem(QtGui.QGraphicsRectItem):
 
     # def mouseDoubleClickEvent(self, event):
     #     self.cmptEmitter.emit(QtCore.SIGNAL("qgtextDoubleClick(PyQt_PyObject)"),element(self.mooseObj_))
-
+    
     def itemChange(self,change,value):
         if change == QtGui.QGraphicsItem.ItemPositionChange:
             self.cmptEmitter.emit(QtCore.SIGNAL("qgtextPositionChange(PyQt_PyObject)"),self.mobj)
@@ -615,9 +622,9 @@ class ComptItem(QtGui.QGraphicsRectItem):
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
-    a = moose.Pool('pool')
-    b = moose.Reac('reac')
-    c = moose.Enz('enzyme')
+    a = self.moose.Pool('pool')
+    b = self.moose.Reac('reac')
+    c = self.moose.Enz('enzyme')
     gview = QtGui.QGraphicsView()
     scene = QtGui.QGraphicsScene(gview)
     #item = PoolItem(a)
