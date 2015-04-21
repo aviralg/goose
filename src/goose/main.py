@@ -8,6 +8,7 @@ import socket
 import errno
 import itertools
 import widgets
+import imp
 from utils import *
 from PyQt4 import Qt, QtCore, QtGui
 from PyQt4.QtCore import *
@@ -175,7 +176,7 @@ class MainWindow(QMainWindow):
         def create_toggle_menubar_action():
             action = QAction("Hide Menu Bar", self)
             action.setShortcut(QKeySequence(QtCore.Qt.Key_F10))
-            action.setShortcutContext(QtCore.Qt.ApplicationShortcut)            
+            action.setShortcutContext(QtCore.Qt.ApplicationShortcut)
             return action
 
         self.new_action     = create_new_action()
@@ -341,7 +342,12 @@ class MainWindow(QMainWindow):
             connection = rpyc.classic.connect(host, port)
             INFO("Connected to Moose server on " + host + ":" + str(port))
             modelname = self.unique_modelname(filename)
-            connection.modules.moose.loadModel(filename, modelname)
+            if filename.endswith(".py"):
+                sys.path.append(os.path.dirname(script))
+                script = imp.load_source("temp_script" ,"filename")
+                script.main(connection.modules.moose)
+            else:
+                connection.modules.moose.loadModel(filename, modelname)
             INFO("Loaded " + modelname)
             self.instance = self.instances[modelname] = \
                 { "conn"     :   connection
@@ -407,7 +413,7 @@ class MainWindow(QMainWindow):
         #     lambda : self.connect_to_moose_server(hostname)
         #                                 )
         # hostname.text()
-        # connect_window.exec_()   
+        # connect_window.exec_()
         # instance = self.start_instance_slot()
         # self.connect_instance_slot()
         # self.read_instance_slot()
