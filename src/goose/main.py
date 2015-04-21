@@ -22,6 +22,9 @@ from widgets.kkit.kkit import KineticsWidget
 # print(QtCore.PYQT_VERSION_STR)
 # rpyc.classic.connect("0.0.0.0", "1000", keepalive = True)
 
+instances = []
+instance = None
+
 class MainWindow(QMainWindow):
     simulation_run = pyqtSignal()
     signals = { "pre"  :   { "connect"     :   pyqtSignal()
@@ -76,9 +79,11 @@ class MainWindow(QMainWindow):
 
     def __init__(self, application, goose_log_directory, models):
         super(MainWindow, self).__init__()
+        global instances
+        global instance
         self.goose_log_directory = goose_log_directory
-        self.instances       = {}
-        self.instance        = None
+        instances = self.instances       = {}
+        instance = self.instance        = None
         self._application = application
         self._setup_main_window()
         self._setup_central_widget()
@@ -125,8 +130,8 @@ class MainWindow(QMainWindow):
         # w = IPythonConsole(globals())
         # w.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.FramelessWindowHint)
         # centralWidget.addSubWindow(w)
-        # centralWidget.addSubWindow(IPythonConsole(globals()))
-        # centralWidget.addSubWindow(IPythonConsole(globals()))
+        self.centralWidget().addSubWindow(widgets.IPythonConsole(globals()))
+        # centralWidget.addSubWindow(IPythonConsole(globals() ))
         # return centralWidget
 
     def _setup_signals(self):
@@ -336,6 +341,7 @@ class MainWindow(QMainWindow):
         return modelname
 
     def connect_to_moose_server(self, host, port, pid, filename):
+        global instance
         try:
             DEBUG("Connecting to Moose server on " + host + ":" + str(port))
             connection = rpyc.classic.connect(host, port)
@@ -343,7 +349,7 @@ class MainWindow(QMainWindow):
             modelname = self.unique_modelname(filename)
             connection.modules.moose.loadModel(filename, modelname)
             INFO("Loaded " + modelname)
-            self.instance = self.instances[modelname] = \
+            instance = self.instance = self.instances[modelname] = \
                 { "conn"     :   connection
                 , "moose"    :   connection.modules.moose
                 , "pid"      :   pid
