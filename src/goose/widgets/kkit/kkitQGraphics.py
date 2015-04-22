@@ -1,4 +1,4 @@
-
+from common import *
 from PyQt4 import QtGui, QtCore, Qt
 from PyQt4.QtGui import QPixmap, QImage, QGraphicsPixmapItem
 from constants import *

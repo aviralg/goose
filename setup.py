@@ -56,5 +56,9 @@ setup( name             =   'goose'
      , package_data     =   { ''    :   [ 'src/goose/data/*/*'
                                         ]
                             }
-     , scripts          =   scripts
+        # entry_points    =   { 'console_scripts': [ 'goose = goose.__init__.py'
+        #                                          , 'moose-gui = goose.__init__.py'
+        #                                          ]
+        #                     }
+     , scripts          =   []
 )

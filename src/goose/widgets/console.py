@@ -12,11 +12,13 @@ class IPythonConsole(RichIPythonWidget):
         self.kernel = self.kernel_manager.kernel
         self.kernel.gui = 'qt4'
         self.kernel.user_ns = namespace
-        # self.update_namespace(kwargs)
         self.kernel.shell.push(kwargs)
         self.kernel_client = self.kernel_manager.client()
         self.kernel_client.start_channels()
         self.exit_requested.connect(self.exit)
+
+    def update_namespace(self, **kwargs):
+        self.kernel.shell.push(kwargs)
 
     def exit(self, *args):
         self.kernel_client.stop_channels()

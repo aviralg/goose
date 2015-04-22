@@ -15,6 +15,7 @@ import datetime
 import moose
 from plumbum import cli
 import rpyc
+import imp
 from rpyc.utils.server import ThreadedServer
 from rpyc.core import SlaveService
 from rpyc.utils.classic import DEFAULT_SERVER_PORT, DEFAULT_SERVER_SSL_PORT
@@ -56,8 +57,40 @@ class MooseService(SlaveService):
     results             = []
     proxies             = []
     _simulation_running = False
-    def exposed_load(self, modelfile):
-        pass
+
+    def exposed___class__(self):
+        return MooseService
+
+    def exposed_modelname(self, filename):
+        return os.path.splitext(os.path.basename(filename))[0]
+
+    def exposed_unique_modelname(self, filename):
+        return self.exposed_modelname(filename)
+        # temp = modelname = self.modelname(filename)
+        # index = 0
+        # while temp in self.instances:
+        #     index += 1
+        #     temp = modelname + "[" + str(index) + "]"
+        # return modelname
+
+    def exposed_load(self, filename):
+        if filename.endswith(".py"):
+            temp_argv = sys.argv
+            sys.argv = []
+            sys.path.append(os.path.dirname(filename))
+            cwd = os.getcwd()
+            os.chdir(os.path.dirname(filename))
+            modulename = os.path.splitext(os.path.basename(filename))[0]
+            script = imp.load_source(modulename ,filename)
+            modelname = script.main()
+            if modelname is None: modelname = "/"
+            os.chdir(cwd)
+            sys.argv = temp_argv            
+        else:
+            modelname = self.exposed_unique_modelname(filename)
+            moose.loadModel(filename, modelname)
+
+        return modelname
 
     def simdata(self):
         data = { "simtime"  :   moose.element("/clock").runTime

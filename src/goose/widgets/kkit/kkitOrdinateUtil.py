@@ -180,7 +180,7 @@ def countitems(mitems,objtype,moose):
     countuniqItems = Counter(items)
     return(uniqItems,countuniqItems)
 
-def autoCoordinates(meshEntry,srcdesConnection):
+def autoCoordinates(meshEntry,srcdesConnection, moose):
     #for cmpt,memb in meshEntry.items():
     #    print memb
     xmin = 0.0

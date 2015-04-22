@@ -582,10 +582,12 @@ class GraphicalView(QtGui.QGraphicsView):
                                           )
 
     def objExist(self,path,name,index):
+        print "index ",index,path,name
         if index == 0:
             fPath = path+'/'+name
         else:
             fPath = path+'/'+name+'_'+str(index)
+        print " fpath ",fPath
         if self.moose.exists(fPath):
             index += 1
             return self.objExist(path,name,index)
@@ -1083,7 +1085,7 @@ class GraphicalView(QtGui.QGraphicsView):
                 self.moose.connect(src, 'valueOut', des, 'setConcInit', 'OneToOne')
         elif ( isinstance(self.moose.element(src),self.moose.Function) and (isinstance(self.moose.element(des),self.moose.ReacBase) ) ):
                 self.moose.connect(src, 'valueOut', des, 'setNumKf', 'OneToOne')
-        elif (((isinstance(self.moose.element(src),self.moose.ReacBase))or (isinstance(self.moose.element(src),self.moose.EnzBase))) and (isinstance(self.moose.element(des),PoolBase))):
+        elif (((isinstance(self.moose.element(src),self.moose.ReacBase))or (isinstance(self.moose.element(src),self.moose.EnzBase))) and (isinstance(self.moose.element(des),self.moose.PoolBase))):
             found = False
             for msg in src.msgOut:
                 if self.moose.element(msg.e2.path) == des:

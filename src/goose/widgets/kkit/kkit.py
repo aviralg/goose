@@ -395,7 +395,7 @@ class  KineticsWidget(QtGui.QWidget):
             if not self.noPositionInfo:
                 self.autocoordinates = True
 
-                self.xmin,self.xmax,self.ymin,self.ymax,self.autoCordinatepos = autoCoordinates(self.meshEntry,self.srcdesConnection)
+                self.xmin,self.xmax,self.ymin,self.ymax,self.autoCordinatepos = autoCoordinates(self.meshEntry,self.srcdesConnection, self.moose)
             # TODO: size will be dummy at this point, but size I need the availiable size from the Gui
             #self.size= QtCore.QSize(1000 ,550)
             #self.sceneContainer.clear()

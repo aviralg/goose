@@ -15,16 +15,14 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 import signal
 from scheduler import SchedulingWidget
-import widgets
-from widgets import kkit
-from widgets.kkit.kkit import KineticsWidget
-
+# import widgets
+# from widgets import kkit
+# from widgets.kkit.kkit import KineticsWidget
+from widgets import *
 # from win32process import DETACHED_PROCESS, CREATE_NEW_PROCESS_GROUP
 # print(QtCore.PYQT_VERSION_STR)
 # rpyc.classic.connect("0.0.0.0", "1000", keepalive = True)
 
-instances = []
-instance = None
 
 class MainWindow(QMainWindow):
     simulation_run = pyqtSignal()
@@ -80,12 +78,11 @@ class MainWindow(QMainWindow):
 
     def __init__(self, application, goose_log_directory, models):
         super(MainWindow, self).__init__()
-        global instances
-        global instance
         self.goose_log_directory = goose_log_directory
-        instances = self.instances       = {}
-        instance = self.instance        = None
+        self.instances      = {}
+        self.instance       = None
         self._application = application
+        self._setup_global_widgets()
         self._setup_main_window()
         self._setup_central_widget()
         self._setup_signals()
@@ -95,6 +92,15 @@ class MainWindow(QMainWindow):
         self._application.aboutToQuit.connect(self.stop_moose_servers)
         self._setup_toolbars()
         [self.load_slot(model) for model in models]
+
+    def _setup_global_widgets(self):
+        self._console = QDockWidget(self)
+        self._console.setWidget(IPythonConsole( globals()
+                                              , instances = self.instances
+                                              , instance = self.instance
+                                              )
+                               )
+        self._console.setWindowTitle("Interactive Python Console")
 
     def _setup_main_window(self):
         self.setWindowTitle("GOOSE")
@@ -131,7 +137,7 @@ class MainWindow(QMainWindow):
         # w = IPythonConsole(globals())
         # w.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.FramelessWindowHint)
         # centralWidget.addSubWindow(w)
-        self.centralWidget().addSubWindow(widgets.IPythonConsole(globals()))
+        # self.centralWidget().addSubWindow(widgets.IPythonConsole(globals()))
         # centralWidget.addSubWindow(IPythonConsole(globals() ))
         # return centralWidget
 
@@ -178,11 +184,19 @@ class MainWindow(QMainWindow):
             action = QAction("Tabbed View", self)
             return action
 
-        def create_toggle_menubar_action():
-            action = QAction("Hide Menu Bar", self)
-            action.setShortcut(QKeySequence(QtCore.Qt.Key_F10))
+        def create_interactive_python_console_action():
+            action = QAction("Interactive Python Console", self)
+            action.setToolTip("Show interactive pyton console")
+            action.setShortcut(QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_I))
             action.setShortcutContext(QtCore.Qt.ApplicationShortcut)
             return action
+
+
+        # def create_toggle_menubar_action():
+        #     action = QAction("Hide Menu Bar", self)
+        #     action.setShortcut(QKeySequence(QtCore.Qt.Key_F10))
+        #     action.setShortcutContext(QtCore.Qt.ApplicationShortcut)
+        #     return action
 
         self.new_action     = create_new_action()
         self.open_action    = create_open_action()
@@ -190,7 +204,9 @@ class MainWindow(QMainWindow):
         self.quit_action    = create_quit_action()
         self.toggle_fullscreen_action = create_toggle_fullscreen_action()
         self.toggle_window_arrangement_action = create_toggle_window_arrangement_action()
-        self.toggle_menubar_action = create_toggle_menubar_action()
+        self.interactive_python_console_action = create_interactive_python_console_action()
+
+        # self.toggle_menubar_action = create_toggle_menubar_action()
 
     def print_simulation_data(self, data):
         import pprint
@@ -219,7 +235,14 @@ class MainWindow(QMainWindow):
         self.connect_action.triggered.connect(self.connect_slot)
         self.toggle_window_arrangement_action.triggered.connect(self.toggle_window_arrangement_slot)
         self.toggle_fullscreen_action.triggered.connect(self.toggle_fullscreen_slot)
-        self.toggle_menubar_action.triggered.connect(self.toggle_menubar_slot)
+        # self.toggle_menubar_action.triggered.connect(self.toggle_menubar_slot)
+        self.interactive_python_console_action.triggered.connect(self.interactive_python_console_slot)
+
+    @pyqtSlot(object)
+    def interactive_python_console_slot(self):
+        # self.removeDockWidget(self._console)
+        self.addDockWidget(Qt.BottomDockWidgetArea, self._console)
+        self._console.show()
 
     @pyqtSlot(object)
     def toggle_menubar_slot(self):
@@ -252,8 +275,13 @@ class MainWindow(QMainWindow):
         def create_view_menu(menubar):
             menu = menubar.addMenu("View")
             menu.addAction(self.toggle_fullscreen_action)
-            menu.addAction(self.toggle_menubar_action)
+            # menu.addAction(self.toggle_menubar_action)
             menu.addAction(self.toggle_window_arrangement_action)
+            return menu
+
+        def create_widgets_menu(menubar):
+            menu = menubar.addMenu("Widgets")
+            menu.addAction(self.interactive_python_console_action)
             return menu
 
         def create_help_menu(menubar):
@@ -267,6 +295,7 @@ class MainWindow(QMainWindow):
         menubar = self.menuBar()
         create_file_menu(menubar)
         create_view_menu(menubar)
+        create_widgets_menu(menubar)
         # create_help_menu(menubar)
 
         return menubar
@@ -330,32 +359,23 @@ class MainWindow(QMainWindow):
             #     INFO("Connected to moose server on port " + str(port))
             #     return connection
 
-    def modelname(self, filename):
-        return os.path.splitext(os.path.basename(filename))[0]
-
-    def unique_modelname(self, filename):
-        temp = modelname = self.modelname(filename)
-        index = 0
-        while temp in self.instances:
-            index += 1
-            temp = modelname + "[" + str(index) + "]"
-        return modelname
-
     def connect_to_moose_server(self, host, port, pid, filename):
         global instance
         try:
             DEBUG("Connecting to Moose server on " + host + ":" + str(port))
-            connection = rpyc.classic.connect(host, port)
+            connection = rpyc.classic.connect(host, port, keepalive=True)
             INFO("Connected to Moose server on " + host + ":" + str(port))
-            modelname = self.unique_modelname(filename)
-            if filename.endswith(".py"):
-                sys.path.append(os.path.dirname(script))
-                script = imp.load_source("temp_script" ,"filename")
-                script.main(connection.modules.moose)
-            else:
-                connection.modules.moose.loadModel(filename, modelname)
+            # if filename.endswith(".py"):
+            #     sys.path.append(os.path.dirname(filename))
+            #     script = imp.load_source("temp_script" ,filename)
+            #     modelname = script.main(connection.modules.moose)
+            # else:
+            # modelname = 
+            # modelname = connection.root.modelname(filename)
+            modelname = connection.root.load(filename)
+            #modelname = "/model"
             INFO("Loaded " + modelname)
-            instance = self.instance = self.instances[modelname] = \
+            self.instance = self.instances[modelname] = \
                 { "conn"     :   connection
                 , "moose"    :   connection.modules.moose
                 , "pid"      :   pid
@@ -365,7 +385,13 @@ class MainWindow(QMainWindow):
                 , "service"  :   connection.root
                 , "thread"   :   rpyc.BgServingThread(connection)
                 }
-            widget = kkit.kkit.KineticsWidget(self.instance)
+            self._console.widget().update_namespace( instance = self.instance
+                                                   , moose = self.instance["moose"]
+                                                   , conn  = self.instance["conn"]
+                                                   , model = self.instance["model"]
+                                                   , port  = self.instance["port"]
+                                                   )
+            widget = KineticsWidget(self.instance)
             self.centralWidget().addSubWindow(widget)
             widget.show()
 
