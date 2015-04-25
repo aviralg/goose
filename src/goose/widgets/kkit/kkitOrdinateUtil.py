@@ -40,14 +40,14 @@ def setupMeshObj(instance,mesh,voxelIndex):
     ycord = []
     
     meshEntryWildcard = '/##[ISA=ChemCompt]'
-    print " self.elecCompt ",mesh
+    #print " self.elecCompt ",mesh
     DEBUG(mesh)
 
     #if mesh is not None:
     if len(mesh) > 0:
         meshEnties = mesh
-        print " \n \n \n -------------------$"
-        print " meshEnties ",meshEnties
+        #print " \n \n \n -------------------$"
+        #print " meshEnties ",meshEnties
 
     else:
         if moose.element(modelRoot).className != "shell":
@@ -55,7 +55,7 @@ def setupMeshObj(instance,mesh,voxelIndex):
                 meshEnties = moose.wildcardFind(modelRoot+meshEntryWildcard)
         else:
              meshEnties = moose.wildcardFind(meshEntryWildcard)       
-    print " \n \n meshEnties ",meshEnties
+    #print " \n \n meshEnties ",meshEnties
 
     for meshEnt in meshEnties:
         DEBUG(meshEnt)
@@ -75,17 +75,17 @@ def setupMeshObj(instance,mesh,voxelIndex):
 
         #mol_cpl  = moose.wildcardFind(meshEnt.path+'/#[ISA=PoolBase]')
         mol_cpl = moose.wildcardFind(combine)
-        print " moleCplx ",mol_cpl
+        # print " moleCplx ",mol_cpl
         # mol_cpl  = moose.wildcardFind(meshEnt.path+'/#/#/#[ISA=PoolBase]')
         # print " mol_cpl", meshEnt.path, " \n molecule",mol_cpl
         funclist = moose.wildcardFind(meshEnt.path+'/##[ISA=Function]')
         enzlist  = moose.wildcardFind(meshEnt.path+'/##[ISA=EnzBase]')
         realist  = moose.wildcardFind(meshEnt.path+'/##[ISA=ReacBase]')
         tablist  = moose.wildcardFind(meshEnt.path+'/##[ISA=StimulusTable]')
-        print "\n funclist ", funclist
-        print "\n enzlist ",enzlist
-        print "\n realist ",realist
-        print "\n tablist ",tablist
+        # print "\n funclist ", funclist
+        # print "\n enzlist ",enzlist
+        # print "\n realist ",realist
+        # print "\n tablist ",tablist
         if mol_cpl or funclist or enzlist or realist or tablist:
             for m in mol_cpl:
                 if isinstance(moose.element(m.parent),moose.CplxEnzBase):
@@ -146,11 +146,11 @@ def setupItem(instance,cntDict,mesh,voxelIndex):
     zombieType = ['ReacBase','EnzBase','Function','StimulusTable']
     #print "-------------------------------<<< ",mesh[0],mesh[0].path
     #if mesh is not None:
-    print type(mesh)
+    #print type(mesh)
     #if len(mesh) > 0:
     if len(mesh)> 0:
         for m in mesh[:]:
-            print " $@@$#@$@#$@#",m.path
+            # print " $@@$#@$@#$@#",m.path
             modelPath = m.path
             if modelPath != '/model[0]/chem[0]/spine[0]':
                 modelPathList.append(m.path)
@@ -160,8 +160,8 @@ def setupItem(instance,cntDict,mesh,voxelIndex):
             if moose.element(modelPath).className == "Neutral":
                 modelPath
                 modelPathList.append(modelPath)
-    print "\n<><><><><><><><><>\n"
-    print " modelPathList ",modelPathList
+    # print "\n<><><><><><><><><>\n"
+    # print " modelPathList ",modelPathList
     for modelPath in modelPathList:
         for baseObj in zombieType:
             path = '/##[ISA='+baseObj+']'
@@ -171,7 +171,7 @@ def setupItem(instance,cntDict,mesh,voxelIndex):
                 path = modelPath+path
             # DEBUG(path)
             # path = '/model/chem/dend/#[0][ISA='+baseObj+']'
-            print " $$$$$$$$$$$$$$$$$$$$ ->"
+            # print " $$$$$$$$$$$$$$$$$$$$ ->"
             DEBUG (path)
             if ( (baseObj == 'ReacBase') or (baseObj == 'EnzBase')):
                 for items in moose.wildcardFind(path):

@@ -283,19 +283,19 @@ class  KineticsWidget(QtGui.QWidget):
             self.spineMesh = self.moose.wildcardFind(self.modelRoot + "/##[ISA=SpineMesh]")[0]
             self.psdMesh   = self.moose.wildcardFind(self.modelRoot + "/##[ISA=PsdMesh]")[0]
 
-            print " elecCompt ",elecCompt
-            print " neuro ",self.neuroMesh.elecComptList
+            # print " elecCompt ",elecCompt
+            # print " neuro ",self.neuroMesh.elecComptList
             if self.elecCompt.path in map(lambda x : x[0].path, self.neuroMesh.elecComptList):
-                print " \n 1 "
+                # print " \n 1 "
                 self.mesh.append(self.neuroMesh)
                  ##this i need to setupMesh
             if self.elecCompt.path in map(lambda x : x[0].path, self.spineMesh.elecComptList):
-                print " \n 2 "
+                # print " \n 2 "
                 self.mesh.append(self.spineMesh)
             if self.elecCompt.path in map(lambda x : x[0].path, self.psdMesh.elecComptList):
-                print "\n 3 "
+                # print "\n 3 "
                 self.mesh.append(self.psdMesh)
-            print "\n ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ "
+            # print "\n ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ "
             DEBUG(self.mesh)
         self.setWindowTitle(self.model.name)
         #self.plugin = plugin
@@ -325,7 +325,7 @@ class  KineticsWidget(QtGui.QWidget):
         # else:
         #elf.sceneContainer.setSceneRect(self.sceneContainer.itemsBoundingRect())
         self.sceneContainer.setBackgroundBrush(QColor(230,220,219,120))
-        print " mesh ",self.mesh
+        # print " mesh ",self.mesh
         self.updateModelView()
     '''
     def reset(self):
@@ -412,7 +412,7 @@ class  KineticsWidget(QtGui.QWidget):
             self.m = self.mesh
         else:
             self.m = self.moose.wildcardFind(self.modelRoot+'/##[ISA=ChemCompt]')
-        print " chemCompt ",self.m
+        #print " chemCompt ",self.m
         if self.m:
             self.xmin = 0.0
             self.xmax = 1.0
@@ -623,7 +623,7 @@ class  KineticsWidget(QtGui.QWidget):
     def drawLine_arrow(self, itemignoreZooming=False):
         for inn,out in self.srcdesConnection.items():
 
-            print "inn ",inn, " out ",out
+            #print "inn ",inn, " out ",out
             # self.srcdesConnection is dictionary which contains key,value \
             #    key is Enzyme or Reaction  and value [[list of substrate],[list of product]] (tuple)
             #    key is Function and value is [list of pool] (list)
