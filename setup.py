@@ -60,5 +60,5 @@ setup( name             =   'goose'
         #                                          , 'moose-gui = goose.__init__.py'
         #                                          ]
         #                     }
-     , scripts          =   []
+     , scripts          =   scripts
 )

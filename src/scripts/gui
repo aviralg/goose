@@ -5,13 +5,11 @@
 import sys
 import os
 import traceback
-import goose
 from goose import *
 from PyQt4 import Qt, QtCore, QtGui
 from PyQt4.QtGui import *
 import imp
 import signal
-from time import *
 
 GOOSE_ROOT_DIRECTORY    = os.path.expanduser("~/.goose/")
 GOOSE_LOG               = "logs"

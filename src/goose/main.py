@@ -8,6 +8,7 @@ import socket
 import errno
 import itertools
 import widgets
+from widgets import *
 import imp
 from utils import *
 from PyQt4 import Qt, QtCore, QtGui
@@ -370,7 +371,7 @@ class MainWindow(QMainWindow):
             #     script = imp.load_source("temp_script" ,filename)
             #     modelname = script.main(connection.modules.moose)
             # else:
-            # modelname = 
+            # modelname =
             # modelname = connection.root.modelname(filename)
             modelname = connection.root.load(filename)
             #modelname = "/model"
@@ -391,9 +392,14 @@ class MainWindow(QMainWindow):
                                                    , model = self.instance["model"]
                                                    , port  = self.instance["port"]
                                                    )
-            widget = KineticsWidget(self.instance)
-            self.centralWidget().addSubWindow(widget)
-            widget.show()
+            # widget = KineticsWidget(self.instance)
+            DEBUG("Creating 3D widget")
+            nkit_widget = NeuroKitWidget(self.instance)
+            self._console.widget().update_namespace(network = nkit_widget.network)
+            # nkit_widget.show()
+            DEBUG("Created 3D widget")
+            self.centralWidget().addSubWindow(nkit_widget)
+            nkit_widget.show()
 
         except socket.error as serr:
             if serr.errno != errno.ECONNREFUSED:
