@@ -263,13 +263,40 @@ class KkitEditorView(MooseEditorView):
 '''
 class  KineticsWidget(QtGui.QWidget):
     #def __init__(self, plugin, *args):
-    def __init__(self, instance, parent=None):
+    def __init__(self, instance, elecCompt = None, voxelIndex = None, parent=None):
         #EditorWidgetBase.__init__(self, *args)
         QtGui.QWidget.__init__(self)
         self.instance   = instance
         self.moose = instance["moose"]
         self.model = instance["model"]
         self.modelRoot  = self.model.path
+
+        #Checking in case of multiscale model
+        self.elecCompt = elecCompt
+        self.voxelIndex = voxelIndex
+        self.neuroMesh = None
+        self.psdMesh   = None
+        self.spineMesh = None
+        self.mesh = []
+        if self.elecCompt is not None:
+            self.neuroMesh = self.moose.wildcardFind(self.modelRoot + "/##[ISA=NeuroMesh]")[0]
+            self.spineMesh = self.moose.wildcardFind(self.modelRoot + "/##[ISA=SpineMesh]")[0]
+            self.psdMesh   = self.moose.wildcardFind(self.modelRoot + "/##[ISA=PsdMesh]")[0]
+
+            print " elecCompt ",elecCompt
+            print " neuro ",self.neuroMesh.elecComptList
+            if self.elecCompt.path in map(lambda x : x[0].path, self.neuroMesh.elecComptList):
+                print " \n 1 "
+                self.mesh.append(self.neuroMesh)
+                 ##this i need to setupMesh
+            if self.elecCompt.path in map(lambda x : x[0].path, self.spineMesh.elecComptList):
+                print " \n 2 "
+                self.mesh.append(self.spineMesh)
+            if self.elecCompt.path in map(lambda x : x[0].path, self.psdMesh.elecComptList):
+                print "\n 3 "
+                self.mesh.append(self.psdMesh)
+            print "\n ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ "
+            DEBUG(self.mesh)
         self.setWindowTitle(self.model.name)
         #self.plugin = plugin
         self.border = 5
@@ -298,7 +325,7 @@ class  KineticsWidget(QtGui.QWidget):
         # else:
         #elf.sceneContainer.setSceneRect(self.sceneContainer.itemsBoundingRect())
         self.sceneContainer.setBackgroundBrush(QColor(230,220,219,120))
-
+        print " mesh ",self.mesh
         self.updateModelView()
     '''
     def reset(self):
@@ -319,6 +346,10 @@ class  KineticsWidget(QtGui.QWidget):
         #elf.sceneContainer.setSceneRect(self.sceneContainer.itemsBoundingRect())
         self.sceneContainer.setBackgroundBrush(QColor(230,220,219,120))
     '''
+
+    def findMesh(self, elecCompt):
+        pass
+
     def updateModelView(self):
         self.getMooseObj()
         self.mooseObjOntoscene()
@@ -374,7 +405,14 @@ class  KineticsWidget(QtGui.QWidget):
         # -- setupMeshObj(self.modelRoot),
         #    ----self.meshEntry has [meshEnt] = function: {}, Pool: {} etc
         # setupItem
-        self.m = self.moose.wildcardFind(self.modelRoot+'/##[ISA=ChemCompt]')
+        # print " getMooseObj ",self.elecCompt, " " ,self.mesh
+        # print " type ",type(self.elecCompt)
+        DEBUG(self.elecCompt)
+        if self.elecCompt is not None:
+            self.m = self.mesh
+        else:
+            self.m = self.moose.wildcardFind(self.modelRoot+'/##[ISA=ChemCompt]')
+        print " chemCompt ",self.m
         if self.m:
             self.xmin = 0.0
             self.xmax = 1.0
@@ -385,13 +423,13 @@ class  KineticsWidget(QtGui.QWidget):
 
             #self.meshEntry.clear= {}
             # Compartment and its members are setup
-            self.meshEntry,self.xmin,self.xmax,self.ymin,self.ymax,self.noPositionInfo = setupMeshObj(self.instance)
+            self.meshEntry,self.xmin,self.xmax,self.ymin,self.ymax,self.noPositionInfo = setupMeshObj(self.instance,self.mesh,self.voxelIndex)
             self.autocoordinates = False
             if self.srcdesConnection:
                 self.srcdesConnection.clear()
             else:
                 self.srcdesConnection = {}
-            setupItem(self.instance,self.srcdesConnection)
+            setupItem(self.instance,self.srcdesConnection,self.mesh,self.voxelIndex)
             if not self.noPositionInfo:
                 self.autocoordinates = True
 
@@ -584,7 +622,8 @@ class  KineticsWidget(QtGui.QWidget):
 
     def drawLine_arrow(self, itemignoreZooming=False):
         for inn,out in self.srcdesConnection.items():
-            #print "inn ",inn, " out ",out
+
+            print "inn ",inn, " out ",out
             # self.srcdesConnection is dictionary which contains key,value \
             #    key is Enzyme or Reaction  and value [[list of substrate],[list of product]] (tuple)
             #    key is Function and value is [list of pool] (list)

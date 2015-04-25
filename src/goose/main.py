@@ -391,9 +391,29 @@ class MainWindow(QMainWindow):
                                                    , model = self.instance["model"]
                                                    , port  = self.instance["port"]
                                                    )
-            widget = KineticsWidget(self.instance)
+            #widget = KineticsWidget(instance)
+            widget1 = KineticsWidget( self.instance  
+                                   , elecCompt = self.instance["moose"].element("/model[0]/elec[0]/dend_e_1_3") 
+                                   , voxelIndex = 0
+                                   )
+            
+            widget = KineticsWidget( self.instance  
+                                   , elecCompt = self.instance["moose"].element("/model[0]/elec[0]/head0") 
+                                   , voxelIndex = 0
+                                   )
+            
+            # widget = KineticsWidget( self.instance  
+            #                        , elecCompt = self.instance["moose"].element("/model[0]/elec[0]/soma_1_0") 
+            #                        , voxelIndex = 0
+            #                        )
+            # widget = KineticsWidget( self.instance  
+            #                        , elecCompt = self.instance["moose"].element("/model[0]/elec[0]/apical_e_2_0") 
+            #                        , voxelIndex = 1
+            #                        )
             self.centralWidget().addSubWindow(widget)
             widget.show()
+            self.centralWidget().addSubWindow(widget1)
+            widget1.show()
 
         except socket.error as serr:
             if serr.errno != errno.ECONNREFUSED:
