@@ -393,13 +393,39 @@ class MainWindow(QMainWindow):
                                                    , port  = self.instance["port"]
                                                    )
             # widget = KineticsWidget(self.instance)
-            DEBUG("Creating 3D widget")
-            nkit_widget = NeuroKitWidget(self.instance)
-            self._console.widget().update_namespace(network = nkit_widget.network)
+
+            # DEBUG("Creating 3D widget")
+            # nkit_widget = NeuroKitWidget(self.instance)
+            # self._console.widget().update_namespace(network = nkit_widget.network)
+            # # nkit_widget.show()
+            # DEBUG("Created 3D widget")
+            # self.centralWidget().addSubWindow(nkit_widget)
             # nkit_widget.show()
-            DEBUG("Created 3D widget")
-            self.centralWidget().addSubWindow(nkit_widget)
-            nkit_widget.show()
+
+
+            #widget = KineticsWidget(instance)
+            widget1 = KineticsWidget( self.instance
+                                   , elecCompt = self.instance["moose"].element("/model/elec/dend_f_3_0")
+                                   , voxelIndex = 0
+                                   )
+
+            widget = KineticsWidget( self.instance
+                                   , elecCompt = self.instance["moose"].element("/model[0]/elec[0]/head0")
+                                   , voxelIndex = 0
+                                   )
+
+            # widget = KineticsWidget( self.instance
+            #                        , elecCompt = self.instance["moose"].element("/model[0]/elec[0]/soma_1_0")
+            #                        , voxelIndex = 0
+            #                        )
+            # widget = KineticsWidget( self.instance
+            #                        , elecCompt = self.instance["moose"].element("/model[0]/elec[0]/apical_e_2_0")
+            #                        , voxelIndex = 1
+            #                        )
+            self.centralWidget().addSubWindow(widget)
+            widget.show()
+            self.centralWidget().addSubWindow(widget1)
+            widget1.show()
 
         except socket.error as serr:
             if serr.errno != errno.ECONNREFUSED:

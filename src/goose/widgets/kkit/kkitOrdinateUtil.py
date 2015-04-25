@@ -10,19 +10,26 @@ def xyPosition(objInfo,xory,moose):
         return (float(0))
 
 #def setupMeshObj(modelRoot):
-def setupMeshObj(instance):
+def setupMeshObj(instance,mesh,voxelIndex):
 
     ''' Setup compartment and its members pool,reaction,enz cplx under self.meshEntry dictionaries \ 
     self.meshEntry with "key" as compartment, 
     value is key2:list where key2 represents moose object type,list of objects of a perticular type
     e.g self.meshEntry[meshEnt] = { 'reaction': reaction_list,'enzyme':enzyme_list,'pool':poollist,'cplx': cplxlist }
     '''
+    #model = 
     xmin = 0.0
     xmax = 1.0
     ymin = 0.0
     ymax = 1.0
+    # voxelIndex = voxelIndex
+    # elecCompt = elecCompt
     modelRoot = instance['model'].path
+    #spine_mesh = 
     moose = instance['moose']
+    #voxelIndex = instance['voxelIndex']
+    #electricaCompt = instance['elec'].path
+
     positionInfoExist = True
     meshEntry = {}
     if meshEntry:
@@ -33,21 +40,52 @@ def setupMeshObj(instance):
     ycord = []
     
     meshEntryWildcard = '/##[ISA=ChemCompt]'
-    if modelRoot != '/':
-        meshEntryWildcard = modelRoot+meshEntryWildcard
-    for meshEnt in moose.wildcardFind(meshEntryWildcard):
+    print " self.elecCompt ",mesh
+    DEBUG(mesh)
+
+    #if mesh is not None:
+    if len(mesh) > 0:
+        meshEnties = mesh
+        print " \n \n \n -------------------$"
+        print " meshEnties ",meshEnties
+
+    else:
+        if moose.element(modelRoot).className != "shell":
+            if moose.element(modelRoot).className == "Neutral":
+                meshEnties = moose.wildcardFind(modelRoot+meshEntryWildcard)
+        else:
+             meshEnties = moose.wildcardFind(meshEntryWildcard)       
+    print " \n \n meshEnties ",meshEnties
+
+    for meshEnt in meshEnties:
+        DEBUG(meshEnt)
         mollist  = []
         realist  = []
         enzlist  = []
         cplxlist = []
         tablist  = []
         funclist = []
+        if voxelIndex == None:
+            combine = meshEnt.path+'/#[][ISA=PoolBase],'+meshEnt.path+'/#[]/#[]/#[][ISA=PoolBase]'
+        else:
+            combine = meshEnt.path+'/#['+str(voxelIndex)+'][ISA=PoolBase],'\
+                      +meshEnt.path+'/#['+str(voxelIndex)+']/#['+str(voxelIndex)+']/#['+str(voxelIndex)+'][ISA=PoolBase]'
+            DEBUG(combine)
+            #combine = meshEnt.path+'/#['+voxelIndex+'][ISA=PoolBase],'+meshEnt.path+'/#['+voxelIndex+']/#['+voxelIndex+']/#['+voxelIndex+'][ISA=PoolBase]'
 
-        mol_cpl  = moose.wildcardFind(meshEnt.path+'/##[ISA=PoolBase]')
+        #mol_cpl  = moose.wildcardFind(meshEnt.path+'/#[ISA=PoolBase]')
+        mol_cpl = moose.wildcardFind(combine)
+        print " moleCplx ",mol_cpl
+        # mol_cpl  = moose.wildcardFind(meshEnt.path+'/#/#/#[ISA=PoolBase]')
+        # print " mol_cpl", meshEnt.path, " \n molecule",mol_cpl
         funclist = moose.wildcardFind(meshEnt.path+'/##[ISA=Function]')
         enzlist  = moose.wildcardFind(meshEnt.path+'/##[ISA=EnzBase]')
         realist  = moose.wildcardFind(meshEnt.path+'/##[ISA=ReacBase]')
         tablist  = moose.wildcardFind(meshEnt.path+'/##[ISA=StimulusTable]')
+        print "\n funclist ", funclist
+        print "\n enzlist ",enzlist
+        print "\n realist ",realist
+        print "\n tablist ",tablist
         if mol_cpl or funclist or enzlist or realist or tablist:
             for m in mol_cpl:
                 if isinstance(moose.element(m.parent),moose.CplxEnzBase):
@@ -58,7 +96,7 @@ def setupMeshObj(instance):
                     objInfo =m.path+'/info'
                 xcord.append(xyPosition(objInfo,'x',moose))
                 ycord.append(xyPosition(objInfo,'y',moose)) 
-
+            #getxyCord(xcord,ycord,mollist,moose)
             getxyCord(xcord,ycord,funclist,moose)
             getxyCord(xcord,ycord,enzlist,moose)
             getxyCord(xcord,ycord,realist,moose)
@@ -95,82 +133,107 @@ def getxyCord(xcord,ycord,list1,instance):
             ycord.append(xyPosition(objInfo,'y',moose))
 
 #def setupItem(modelPath,cntDict):
-def setupItem(instance,cntDict):
+def setupItem(instance,cntDict,mesh,voxelIndex):
     '''This function collects information of what is connected to what. \
     eg. substrate and product connectivity to reaction's and enzyme's \
     sumtotal connectivity to its pool are collected '''
     #print " setupItem"
     moose = instance['moose']
     modelPath = instance['model'].path
-    DEBUG(modelPath)
     sublist = []
     prdlist = []
+    modelPathList = []
     zombieType = ['ReacBase','EnzBase','Function','StimulusTable']
-    for baseObj in zombieType:
-        path = '/##[ISA='+baseObj+']'
-        if modelPath != '/':
-            path = modelPath+path
-        if ( (baseObj == 'ReacBase') or (baseObj == 'EnzBase')):
-            for items in moose.wildcardFind(path):
-                sublist = []
-                prdlist = []
-                uniqItem,countuniqItem = countitems(items,'subOut',moose)
-                for sub in uniqItem: 
-                    sublist.append((moose.element(sub),'s',countuniqItem[sub]))
+    #print "-------------------------------<<< ",mesh[0],mesh[0].path
+    #if mesh is not None:
+    print type(mesh)
+    #if len(mesh) > 0:
+    if len(mesh)> 0:
+        for m in mesh[:]:
+            print " $@@$#@$@#$@#",m.path
+            modelPath = m.path
+            if modelPath != '/model[0]/chem[0]/spine[0]':
+                modelPathList.append(m.path)
+        
+    else:
+        if moose.element(modelPath).className != "shell":
+            if moose.element(modelPath).className == "Neutral":
+                modelPath
+                modelPathList.append(modelPath)
+    print "\n<><><><><><><><><>\n"
+    print " modelPathList ",modelPathList
+    for modelPath in modelPathList:
+        for baseObj in zombieType:
+            path = '/##[ISA='+baseObj+']'
+            #path = modelPath+path
 
-                uniqItem,countuniqItem = countitems(items,'prd',moose)
-                for prd in uniqItem:
-                    prdlist.append((moose.element(prd),'p',countuniqItem[prd]))
-                
-                if (baseObj == 'CplxEnzBase') :
-                    uniqItem,countuniqItem = countitems(items,'toEnz',moose)
-                    for enzpar in uniqItem:
-                        sublist.append((moose.element(enzpar),'t',countuniqItem[enzpar]))
+            if modelPath != '/':
+                path = modelPath+path
+            # DEBUG(path)
+            # path = '/model/chem/dend/#[0][ISA='+baseObj+']'
+            print " $$$$$$$$$$$$$$$$$$$$ ->"
+            DEBUG (path)
+            if ( (baseObj == 'ReacBase') or (baseObj == 'EnzBase')):
+                for items in moose.wildcardFind(path):
+                    sublist = []
+                    prdlist = []
+                    uniqItem,countuniqItem = countitems(items,'subOut',moose)
+                    for sub in uniqItem: 
+                        sublist.append((moose.element(sub),'s',countuniqItem[sub]))
+
+                    uniqItem,countuniqItem = countitems(items,'prd',moose)
+                    for prd in uniqItem:
+                        prdlist.append((moose.element(prd),'p',countuniqItem[prd]))
                     
-                    uniqItem,countuniqItem = countitems(items,'cplxDest',moose)
-                    for cplx in uniqItem:
-                        prdlist.append((moose.element(cplx),'cplx',countuniqItem[cplx]))
+                    if (baseObj == 'CplxEnzBase') :
+                        uniqItem,countuniqItem = countitems(items,'toEnz',moose)
+                        for enzpar in uniqItem:
+                            sublist.append((moose.element(enzpar),'t',countuniqItem[enzpar]))
+                        
+                        uniqItem,countuniqItem = countitems(items,'cplxDest',moose)
+                        for cplx in uniqItem:
+                            prdlist.append((moose.element(cplx),'cplx',countuniqItem[cplx]))
 
-                if (baseObj == 'EnzBase'):
-                    uniqItem,countuniqItem = countitems(items,'enzDest',moose)
-                    for enzpar in uniqItem:
-                        sublist.append((moose.element(enzpar),'t',countuniqItem[enzpar]))
-                cntDict[items] = sublist,prdlist
-        elif baseObj == 'Function':
-            for items in moose.wildcardFind(path):
-                sublist = []
-                prdlist = []
-                item = items.path+'/x[0]'
-                uniqItem,countuniqItem = countitems(item,'input',moose)
-                for funcpar in uniqItem:
-                    sublist.append((moose.element(funcpar),'sts',countuniqItem[funcpar]))
-                
-                uniqItem,countuniqItem = countitems(items,'valueOut',moose)
-                for funcpar in uniqItem:
-                    prdlist.append((moose.element(funcpar),'stp',countuniqItem[funcpar]))
-                cntDict[items] = sublist,prdlist
+                    if (baseObj == 'EnzBase'):
+                        uniqItem,countuniqItem = countitems(items,'enzDest',moose)
+                        for enzpar in uniqItem:
+                            sublist.append((moose.element(enzpar),'t',countuniqItem[enzpar]))
+                    cntDict[items] = sublist,prdlist
+            elif baseObj == 'Function':
+                for items in moose.wildcardFind(path):
+                    sublist = []
+                    prdlist = []
+                    item = items.path+'/x[0]'
+                    uniqItem,countuniqItem = countitems(item,'input',moose)
+                    for funcpar in uniqItem:
+                        sublist.append((moose.element(funcpar),'sts',countuniqItem[funcpar]))
+                    
+                    uniqItem,countuniqItem = countitems(items,'valueOut',moose)
+                    for funcpar in uniqItem:
+                        prdlist.append((moose.element(funcpar),'stp',countuniqItem[funcpar]))
+                    cntDict[items] = sublist,prdlist
 
-        # elif baseObj == 'Function':
-        #     #ZombieSumFunc adding inputs
-        #     inputlist = []
-        #     outputlist = []
-        #     funplist = []
-        #     nfunplist = []
-        #     for items in moose.wildcardFind(path):
-        #         for funplist in moose.moose.element(items).neighbors['valueOut']:
-        #             for func in funplist:
-        #                 funcx = moose.moose.element(items.path+'/x[0]')
-        #                 uniqItem,countuniqItem = countitems(funcx,'input')
-        #                 for inPut in uniqItem:
-        #                     inputlist.append((inPut,'st',countuniqItem[inPut]))
-        #             cntDict[func] = inputlist
-        else:
-            for tab in moose.wildcardFind(path):
-                tablist = []
-                uniqItem,countuniqItem = countitems(tab,'output',moose)
-                for tabconnect in uniqItem:
-                    tablist.append((moose.element(tabconnect),'tab',countuniqItem[tabconnect]))
-                cntDict[tab] = tablist
+            # elif baseObj == 'Function':
+            #     #ZombieSumFunc adding inputs
+            #     inputlist = []
+            #     outputlist = []
+            #     funplist = []
+            #     nfunplist = []
+            #     for items in moose.wildcardFind(path):
+            #         for funplist in moose.moose.element(items).neighbors['valueOut']:
+            #             for func in funplist:
+            #                 funcx = moose.moose.element(items.path+'/x[0]')
+            #                 uniqItem,countuniqItem = countitems(funcx,'input')
+            #                 for inPut in uniqItem:
+            #                     inputlist.append((inPut,'st',countuniqItem[inPut]))
+            #             cntDict[func] = inputlist
+            else:
+                for tab in moose.wildcardFind(path):
+                    tablist = []
+                    uniqItem,countuniqItem = countitems(tab,'output',moose)
+                    for tabconnect in uniqItem:
+                        tablist.append((moose.element(tabconnect),'tab',countuniqItem[tabconnect]))
+                    cntDict[tab] = tablist
 
 def countitems(mitems,objtype,moose):
     items = []
