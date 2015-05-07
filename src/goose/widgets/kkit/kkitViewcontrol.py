@@ -9,8 +9,10 @@ from PyQt4 import QtSvg
 
 class GraphicalView(QtGui.QGraphicsView):
 
-    def __init__(self,parent,border,layoutPt,createdItem,instance):
+    def __init__(self,parent,border,layoutPt,createdItem,instance,mesh,voxelIndex,mainWindow,mulitScale):
         QtGui.QGraphicsView.__init__(self,parent)
+        self.mesh = mesh
+        self.voxelIndex = voxelIndex
         self.state = None
         self.move  = False
         self.resetState()
@@ -19,7 +21,9 @@ class GraphicalView(QtGui.QGraphicsView):
         self.expectedConnection      = None
         self.selections              = []
         self.connector               = None
+
         self.instance = instance
+        self.mainWindow = mainWindow
         self.moose = instance["moose"]
         self.connectionSignImagePath = "../gui/icons/connection.png"
         self.connectionSignImage     = QImage(self.connectionSignImagePath)
@@ -48,7 +52,10 @@ class GraphicalView(QtGui.QGraphicsView):
         self.iconScale = 1
         self.arrowsize = 2
         self.defaultComptsize = 5
-        self.connectorlist = {"plot": None ,"clone": None,"move": None,"delete": None}
+        if mulitScale == True:
+            self.connectorlist = {"plot": None ,"move": None}
+        else:
+            self.connectorlist = {"plot": None ,"clone": None,"move": None,"delete": None}
         
     def setRefWidget(self,path):
         self.viewBaseType = path
@@ -80,7 +87,6 @@ class GraphicalView(QtGui.QGraphicsView):
         solution = None
         for item in items:
             if hasattr(item, "name"):
-                #print(item.name)
                 if item.name == ITEM:
                     return (item, ITEM)
                 if item.name == COMPARTMENT:
@@ -117,6 +123,8 @@ class GraphicalView(QtGui.QGraphicsView):
                 self.removeConnector()
             elif itemType == ITEM:
                 self.showConnector(self.state["press"]["item"])
+                # DEBUG(self.state["press"]["item"].mobj)
+                self.mainWindow.show_property_slot(self.state["press"]["item"].mobj, self.moose)
             # self.layoutPt.plugin.mainWindow.objectEditSlot(self.state["press"]["item"].mobj, False)
         else:
             self.resetState()
@@ -330,12 +338,15 @@ class GraphicalView(QtGui.QGraphicsView):
                             ## if there is change in 'Topology' of the model
                             ## or if copy has to made then object should be in unZombify mode
                         deleteSolver(self.modelRoot,self.moose)
+                        # for key,value in self.layoutPt.qGraCompt.iteritems():
+                        #     print key,value
                         lKey = [key for key, value in self.layoutPt.qGraCompt.iteritems() if value == itemAtView][0]
                         iR = 0
                         iP = 0
                         t = self.moose.element(cloneObj.parent().mobj)
                         name = t.name
                         if isinstance(cloneObj.parent().mobj,self.moose.PoolBase):
+                            #print " lKey ",lKey
                             retValue = self.objExist(lKey.path,name,iP) 
                             if retValue != None:
                                 name += retValue
@@ -872,7 +883,7 @@ class GraphicalView(QtGui.QGraphicsView):
                             self.getMsgId(src,srcZero,srcOne,item)
                             self.moose.delete(msgIdforDeleting)
                             self.sceneContainerPt.removeItem(item)
-                            setupItem(self.instance,self.layoutPt.srcdesConnection)
+                            setupItem(self.instance,self.layoutPt.srcdesConnection,self.mesh,self.voxelIndex)
                 for msg in self.moose.element(srcZero[0].parent).msgIn:
                     if self.moose.element(msg.e2.path) == self.moose.element(srcZero[0].parent.path):
                         if src[2] == 't':
@@ -917,7 +928,7 @@ class GraphicalView(QtGui.QGraphicsView):
     def deleteSceneObj(self,msgIdforDeleting,item):
         self.moose.delete(msgIdforDeleting)
         self.sceneContainerPt.removeItem(item)
-        setupItem(self.instance,self.layoutPt.srcdesConnection)
+        setupItem(self.instance,self.layoutPt.srcdesConnection,self.mesh,self.voxelIndex)
 
     def getMsgId(self,src,srcZero,srcOne,item):
         for msg in srcZero[0].msgOut:
@@ -996,7 +1007,7 @@ class GraphicalView(QtGui.QGraphicsView):
                 for key, value in self.layoutPt.object2line.items():
                     self.layoutPt.object2line[key] = filter( lambda tup: tup[1] != item ,value)
                 self.layoutPt.getMooseObj()
-                setupItem(self.instance,self.layoutPt.srcdesConnection) 
+                setupItem(self.instance,self.layoutPt.srcdesConnection,self.mesh,self.voxelIndex) 
 
     def zoomSelections(self, x0, y0, x1, y1):
         self.fitInView(self.mapToScene(QtCore.QRect(x0, y0, x1 - x0, y1 - y0)).boundingRect(), Qt.Qt.KeepAspectRatio)
@@ -1113,6 +1124,6 @@ class GraphicalView(QtGui.QGraphicsView):
         if callsetupItem:
             self.layoutPt.getMooseObj()
             # setupItem(self.modelRoot,self.layoutPt.srcdesConnection)
-            setupItem(self.instance,self.layoutPt.srcdesConnection)
+            setupItem(self.instance,self.layoutPt.srcdesConnection,self.mesh,self.voxelIndex)
             self.layoutPt.drawLine_arrow(False)
 

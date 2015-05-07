@@ -123,8 +123,18 @@ class NeuroKitWidget(NetworkViewer) :
                 #print(parent_direction)
                 compartment.add_geometry(distal, proximal, parent_direction)
                 neuron.add_compartment(compartment)
+                compartment.show_geometry(1, True)
             neuron.add_geometry(soma_center)
+            neuron.show_geometry(0, True)
             network.add_neuron(neuron)
+        return ( network
+               , neuron_map.values()
+               , [compartment_map[key.path] for key in self.moose.wildcardFind(path + "/##[ISA=CompartmentBase]")]
+               , []
+               , []
+               )
+
+
             #neuron.show_geometry(0, True)
 
         meshes = self.moose.wildcardFind(path + "/##[ISA=NeuroMesh]")
@@ -173,7 +183,7 @@ class NeuroKitWidget(NetworkViewer) :
                         voxel_map[mesh.startVoxelInCompt[i] + j] = voxel
                         voxel.set_geometry(voxel_distal, voxel_proximal)
                         compartment.add_voxel(voxel)
-                    compartment.show_geometry(0, True)
+                    compartment.show_geometry(1, True)
                 else:
                     total_height    = map(operator.sub, distal, proximal)
                     previous_distal = proximal
@@ -188,7 +198,7 @@ class NeuroKitWidget(NetworkViewer) :
                         voxel.set_geometry(voxel_distal, voxel_proximal)
                         voxel_map[mesh.startVoxelInCompt[i] + j] = voxel
                         compartment.add_voxel(voxel)
-                compartment.show_geometry(0, True)
+                compartment.show_geometry(1, True)
 
         # SPINES
 
@@ -238,7 +248,7 @@ class NeuroKitWidget(NetworkViewer) :
                         spine_map[mesh.startVoxelInCompt[i] + j] = voxel
                         voxel.set_geometry(voxel_distal, voxel_proximal)
                         compartment.add_voxel(voxel)
-                    compartment.show_geometry(0, True)
+                    compartment.show_geometry(1, True)
                 else:
                     total_height    = map(operator.sub, distal, proximal)
                     previous_distal = proximal
@@ -253,7 +263,7 @@ class NeuroKitWidget(NetworkViewer) :
                         voxel.set_geometry(voxel_distal, voxel_proximal)
                         spine_map[mesh.startVoxelInCompt[i] + j] = voxel
                         compartment.add_voxel(voxel)
-                compartment.show_geometry(0, True)
+                compartment.show_geometry(1, True)
 
 
 

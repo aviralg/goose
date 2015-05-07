@@ -20,6 +20,7 @@ from scheduler import SchedulingWidget
 # from widgets import kkit
 # from widgets.kkit.kkit import KineticsWidget
 from widgets import *
+from objectedit import ObjectEditDockWidget
 # from win32process import DETACHED_PROCESS, CREATE_NEW_PROCESS_GROUP
 # print(QtCore.PYQT_VERSION_STR)
 # rpyc.classic.connect("0.0.0.0", "1000", keepalive = True)
@@ -102,6 +103,12 @@ class MainWindow(QMainWindow):
                                               )
                                )
         self._console.setWindowTitle("Interactive Python Console")
+        self.addDockWidget(Qt.BottomDockWidgetArea, self._console)
+        self._console.hide()
+
+        self._property_editor = ObjectEditDockWidget(self)
+        self.addDockWidget(Qt.RightDockWidgetArea, self._property_editor)
+        self._property_editor.hide()
 
     def _setup_main_window(self):
         self.setWindowTitle("GOOSE")
@@ -118,6 +125,10 @@ class MainWindow(QMainWindow):
                            )
         self.setWindowIcon(QIcon(APPLICATION_ICON_PATH))
         self.setAcceptDrops(True)
+
+    @QtCore.pyqtSlot(str, object)
+    def show_property_slot(self, path, moose):
+        self._property_editor.setObject(path, moose)
 
     def _setup_toolbars(self):
         # self.addToolBar(SchedulingWidget(slots = self._slots))
@@ -386,15 +397,21 @@ class MainWindow(QMainWindow):
                 , "service"  :   connection.root
                 , "thread"   :   rpyc.BgServingThread(connection)
                 }
+            
             self._console.widget().update_namespace( instance = self.instance
                                                    , moose = self.instance["moose"]
                                                    , conn  = self.instance["conn"]
                                                    , model = self.instance["model"]
                                                    , port  = self.instance["port"]
                                                    )
-            # widget = KineticsWidget(self.instance)
+            # dockWidget.widget().update_namespace( instance = self.instance
+            #                                        , moose = self.instance["moose"]
+            #                                        , conn  = self.instance["conn"]
+            #                                        , model = self.instance["model"]
+            #                                        , port  = self.instance["port"]
+            #                                        )
 
-            # DEBUG("Creating 3D widget")
+            # # DEBUG("Creating 3D widget")
             # nkit_widget = NeuroKitWidget(self.instance)
             # self._console.widget().update_namespace(network = nkit_widget.network)
             # # nkit_widget.show()
@@ -403,16 +420,34 @@ class MainWindow(QMainWindow):
             # nkit_widget.show()
 
 
-            #widget = KineticsWidget(instance)
-            widget1 = KineticsWidget( self.instance
-                                   , elecCompt = self.instance["moose"].element("/model/elec/dend_f_3_0")
-                                   , voxelIndex = 0
-                                   )
-
+            # widget = KineticsWidget(self.instance,mainWindow=self,multiScale = False)
+            # self.centralWidget().addSubWindow(widget)
+            # widget.show()
+            
             widget = KineticsWidget( self.instance
-                                   , elecCompt = self.instance["moose"].element("/model[0]/elec[0]/head0")
-                                   , voxelIndex = 0
+                                   , elecCompt = self.instance["moose"].element("/model/elec/dend_1_2")
+                                   , voxelIndex = 23,mainWindow = self,multiScale = True
                                    )
+            self.centralWidget().addSubWindow(widget)
+            widget.show()
+
+            # widget1 = KineticsWidget( self.instance
+            #                        , elecCompt = self.instance["moose"].element("/model/elec/dend_1_2")
+            #                        , voxelIndex = 0,mainWindow = self
+            #                        , multiScale = True
+            #                        )
+            # self.centralWidget().addSubWindow(widget1)
+            # widget1.show()
+            # widget2 = KineticsWidget( self.instance
+            #                        , elecCompt = self.instance["moose"].element("/model/elec/head1")
+            #                        , voxelIndex = 1,mainWindow = self,multiScale=True
+            #                        )
+            # self.centralWidget().addSubWindow(widget2)
+            # widget2.show()
+            # widget = KineticsWidget( self.instance
+            #                        , elecCompt = self.instance["moose"].element("/model/elec/head0")
+            #                        , voxelIndex = 0
+            #                        )
 
             # widget = KineticsWidget( self.instance
             #                        , elecCompt = self.instance["moose"].element("/model[0]/elec[0]/soma_1_0")
@@ -422,10 +457,10 @@ class MainWindow(QMainWindow):
             #                        , elecCompt = self.instance["moose"].element("/model[0]/elec[0]/apical_e_2_0")
             #                        , voxelIndex = 1
             #                        )
-            self.centralWidget().addSubWindow(widget)
-            widget.show()
-            self.centralWidget().addSubWindow(widget1)
-            widget1.show()
+            
+            # self.centralWidget().addSubWindow(widget1)
+            # widget1.show()
+
 
         except socket.error as serr:
             if serr.errno != errno.ECONNREFUSED:

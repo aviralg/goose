@@ -2,6 +2,8 @@ from common import *
 import numpy as np
 import networkx as nx
 from collections import Counter
+import time
+import re
 
 def xyPosition(objInfo,xory,moose):
     try:
@@ -22,14 +24,8 @@ def setupMeshObj(instance,mesh,voxelIndex):
     xmax = 1.0
     ymin = 0.0
     ymax = 1.0
-    # voxelIndex = voxelIndex
-    # elecCompt = elecCompt
     modelRoot = instance['model'].path
-    #spine_mesh = 
     moose = instance['moose']
-    #voxelIndex = instance['voxelIndex']
-    #electricaCompt = instance['elec'].path
-
     positionInfoExist = True
     meshEntry = {}
     if meshEntry:
@@ -40,66 +36,75 @@ def setupMeshObj(instance,mesh,voxelIndex):
     ycord = []
     
     meshEntryWildcard = '/##[ISA=ChemCompt]'
-    #print " self.elecCompt ",mesh
-    DEBUG(mesh)
+    # DEBUG(mesh)
 
-    #if mesh is not None:
     if len(mesh) > 0:
         meshEnties = mesh
-        #print " \n \n \n -------------------$"
-        #print " meshEnties ",meshEnties
-
     else:
         if moose.element(modelRoot).className != "shell":
             if moose.element(modelRoot).className == "Neutral":
                 meshEnties = moose.wildcardFind(modelRoot+meshEntryWildcard)
         else:
              meshEnties = moose.wildcardFind(meshEntryWildcard)       
-    #print " \n \n meshEnties ",meshEnties
 
     for meshEnt in meshEnties:
-        DEBUG(meshEnt)
         mollist  = []
         realist  = []
         enzlist  = []
         cplxlist = []
         tablist  = []
         funclist = []
-        if voxelIndex == None:
-            combine = meshEnt.path+'/#[][ISA=PoolBase],'+meshEnt.path+'/#[]/#[]/#[][ISA=PoolBase]'
-        else:
-            combine = meshEnt.path+'/#['+str(voxelIndex)+'][ISA=PoolBase],'\
-                      +meshEnt.path+'/#['+str(voxelIndex)+']/#['+str(voxelIndex)+']/#['+str(voxelIndex)+'][ISA=PoolBase]'
-            DEBUG(combine)
-            #combine = meshEnt.path+'/#['+voxelIndex+'][ISA=PoolBase],'+meshEnt.path+'/#['+voxelIndex+']/#['+voxelIndex+']/#['+voxelIndex+'][ISA=PoolBase]'
 
-        #mol_cpl  = moose.wildcardFind(meshEnt.path+'/#[ISA=PoolBase]')
+        if voxelIndex == None:
+            combine = meshEnt[0].path+'/##[ISA=PoolBase]'
+        else:
+            combine = meshEnt[0].path+'/##['+str(meshEnt[1])+'][ISA=PoolBase]'
+        s = time.time()
         mol_cpl = moose.wildcardFind(combine)
-        # print " moleCplx ",mol_cpl
-        # mol_cpl  = moose.wildcardFind(meshEnt.path+'/#/#/#[ISA=PoolBase]')
-        # print " mol_cpl", meshEnt.path, " \n molecule",mol_cpl
-        funclist = moose.wildcardFind(meshEnt.path+'/##[ISA=Function]')
-        enzlist  = moose.wildcardFind(meshEnt.path+'/##[ISA=EnzBase]')
-        realist  = moose.wildcardFind(meshEnt.path+'/##[ISA=ReacBase]')
-        tablist  = moose.wildcardFind(meshEnt.path+'/##[ISA=StimulusTable]')
-        # print "\n funclist ", funclist
-        # print "\n enzlist ",enzlist
-        # print "\n realist ",realist
-        # print "\n tablist ",tablist
+        funclist = moose.wildcardFind(meshEnt[0].path+'/##[ISA=Function]')
+        enzlist  = moose.wildcardFind(meshEnt[0].path+'/##[ISA=EnzBase]')
+        realist  = moose.wildcardFind(meshEnt[0].path+'/##[ISA=ReacBase]')
+        tablist  = moose.wildcardFind(meshEnt[0].path+'/##[ISA=StimulusTable]')
+        e = time.time()
+        DEBUG(" wildcardFind ")
+        DEBUG (e-s)
+        DEBUG (len(mol_cpl))
+        
         if mol_cpl or funclist or enzlist or realist or tablist:
+            f = 0
             for m in mol_cpl:
                 if isinstance(moose.element(m.parent),moose.CplxEnzBase):
                     cplxlist.append(m)
                     objInfo = m.parent.path+'/info'
                 elif isinstance(moose.element(m),moose.PoolBase):
                     mollist.append(m)
-                    objInfo =m.path+'/info'
+                    if m.getDataIndex > 0:
+                        #mpath = re.sub(r'\[([^]]+)\]', '',m.path)
+                        mpath = m.path[0:m.path.rfind('[')]
+                        #print " test ",m.path,moose.element(m.path)
+                        objInfo = mpath+'/info'
+                    else:
+                         objInfo = m.path+'/info'   
                 xcord.append(xyPosition(objInfo,'x',moose))
-                ycord.append(xyPosition(objInfo,'y',moose)) 
+                ycord.append(xyPosition(objInfo,'y',moose))
+                f1 = time.time()
+                print " \t \t \t ", f1-f
+                f = f1
+            e1 = time.time()
+            DEBUG(e1-e)
             #getxyCord(xcord,ycord,mollist,moose)
             getxyCord(xcord,ycord,funclist,moose)
+            DEBUG (len(funclist))
+            e2 = time.time()
+            DEBUG(e2-e1)
             getxyCord(xcord,ycord,enzlist,moose)
+            DEBUG (len(enzlist))
+            e3 = time.time()
+            DEBUG(e3-e2)
             getxyCord(xcord,ycord,realist,moose)
+            DEBUG (len(realist))
+            e4 = time.time()
+            DEBUG(e4-e3)
             getxyCord(xcord,ycord,tablist,moose)
 
             meshEntry[meshEnt] = {'enzyme':enzlist,
@@ -115,6 +120,7 @@ def setupMeshObj(instance,mesh,voxelIndex):
             ymax = max(ycord)
             positionInfoExist = not(len(np.nonzero(xcord)[0]) == 0 \
                 and len(np.nonzero(ycord)[0]) == 0)
+        DEBUG(time.time()-e)
     return(meshEntry,xmin,xmax,ymin,ymax,positionInfoExist)
 
 def sizeHint(self):
@@ -129,50 +135,36 @@ def getxyCord(xcord,ycord,list1,instance):
         #     objInfo = item.path+'/info'
         if not isinstance(item,moose.Function):
             objInfo = item.path+'/info'
+
             xcord.append(xyPosition(objInfo,'x',moose))
             ycord.append(xyPosition(objInfo,'y',moose))
-
 #def setupItem(modelPath,cntDict):
 def setupItem(instance,cntDict,mesh,voxelIndex):
     '''This function collects information of what is connected to what. \
     eg. substrate and product connectivity to reaction's and enzyme's \
     sumtotal connectivity to its pool are collected '''
-    #print " setupItem"
     moose = instance['moose']
     modelPath = instance['model'].path
     sublist = []
     prdlist = []
     modelPathList = []
     zombieType = ['ReacBase','EnzBase','Function','StimulusTable']
-    #print "-------------------------------<<< ",mesh[0],mesh[0].path
-    #if mesh is not None:
-    #print type(mesh)
-    #if len(mesh) > 0:
     if len(mesh)> 0:
         for m in mesh[:]:
-            # print " $@@$#@$@#$@#",m.path
-            modelPath = m.path
-            if modelPath != '/model[0]/chem[0]/spine[0]':
-                modelPathList.append(m.path)
+            modelPath = m[0].path
+            modelPathList.append(m[0].path)
         
     else:
         if moose.element(modelPath).className != "shell":
             if moose.element(modelPath).className == "Neutral":
                 modelPath
                 modelPathList.append(modelPath)
-    # print "\n<><><><><><><><><>\n"
-    # print " modelPathList ",modelPathList
     for modelPath in modelPathList:
         for baseObj in zombieType:
             path = '/##[ISA='+baseObj+']'
-            #path = modelPath+path
 
             if modelPath != '/':
                 path = modelPath+path
-            # DEBUG(path)
-            # path = '/model/chem/dend/#[0][ISA='+baseObj+']'
-            # print " $$$$$$$$$$$$$$$$$$$$ ->"
-            DEBUG (path)
             if ( (baseObj == 'ReacBase') or (baseObj == 'EnzBase')):
                 for items in moose.wildcardFind(path):
                     sublist = []
@@ -237,15 +229,12 @@ def setupItem(instance,cntDict,mesh,voxelIndex):
 
 def countitems(mitems,objtype,moose):
     items = []
-    #print "mitems in countitems ",mitems,objtype
     items = moose.element(mitems).neighbors[objtype]
     uniqItems = set(items)
     countuniqItems = Counter(items)
     return(uniqItems,countuniqItems)
 
 def autoCoordinates(meshEntry,srcdesConnection, moose):
-    #for cmpt,memb in meshEntry.items():
-    #    print memb
     xmin = 0.0
     xmax = 1.0
     ymin = 0.0

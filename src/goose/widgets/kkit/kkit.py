@@ -5,7 +5,7 @@ from collections import defaultdict
 from kkitCalcArrow import *
 from PyQt4 import QtGui, QtCore, Qt
 from PyQt4 import QtGui, QtCore, Qt
-
+import time
 '''
 class KkitPlugin(MoosePlugin):
     """Default plugin for MOOSE GUI"""
@@ -263,14 +263,16 @@ class KkitEditorView(MooseEditorView):
 '''
 class  KineticsWidget(QtGui.QWidget):
     #def __init__(self, plugin, *args):
-    def __init__(self, instance, elecCompt = None, voxelIndex = None, parent=None):
+    def __init__(self, instance, elecCompt = None, voxelIndex = None, parent=None, mainWindow = None,multiScale = False):
         #EditorWidgetBase.__init__(self, *args)
+
         QtGui.QWidget.__init__(self)
         self.instance   = instance
         self.moose = instance["moose"]
         self.model = instance["model"]
         self.modelRoot  = self.model.path
-
+        self.mainWindow = mainWindow
+        self.multiScale = multiScale
         #Checking in case of multiscale model
         self.elecCompt = elecCompt
         self.voxelIndex = voxelIndex
@@ -278,27 +280,35 @@ class  KineticsWidget(QtGui.QWidget):
         self.psdMesh   = None
         self.spineMesh = None
         self.mesh = []
+        print " KineticsWidget"
         if self.elecCompt is not None:
             self.neuroMesh = self.moose.wildcardFind(self.modelRoot + "/##[ISA=NeuroMesh]")[0]
             self.spineMesh = self.moose.wildcardFind(self.modelRoot + "/##[ISA=SpineMesh]")[0]
             self.psdMesh   = self.moose.wildcardFind(self.modelRoot + "/##[ISA=PsdMesh]")[0]
 
-            # print " elecCompt ",elecCompt
-            # print " neuro ",self.neuroMesh.elecComptList
+            self.dendVoxelToSpineVoxel = self.neuroMesh.spineVoxelOnDendVoxel
+            self.spineToDendVoxel = self.spineMesh.neuronVoxel
+            self.psdToSpineVoxel = self.psdMesh.neuronVoxel
+
             if self.elecCompt.path in map(lambda x : x[0].path, self.neuroMesh.elecComptList):
-                # print " \n 1 "
-                self.mesh.append(self.neuroMesh)
-                 ##this i need to setupMesh
+                self.mesh.append((self.neuroMesh,self.voxelIndex))
+                #checking for existance of spine and psd on dend Voxel
+                if self.dendVoxelToSpineVoxel[self.voxelIndex] >= 0:
+                    self.sVolexIndex = self.dendVoxelToSpineVoxel[self.voxelIndex]
+                    self.mesh.append((self.spineMesh,self.sVolexIndex))
+                    if self.sVolexIndex in self.psdToSpineVoxel:
+                        self.mesh.append((self.psdMesh,self.sVolexIndex))
             if self.elecCompt.path in map(lambda x : x[0].path, self.spineMesh.elecComptList):
-                # print " \n 2 "
-                self.mesh.append(self.spineMesh)
-            if self.elecCompt.path in map(lambda x : x[0].path, self.psdMesh.elecComptList):
-                # print "\n 3 "
-                self.mesh.append(self.psdMesh)
-            # print "\n ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ "
-            DEBUG(self.mesh)
+                self.mesh.append((self.spineMesh,self.voxelIndex))
+                #checking for existance of dend and psd on spine Mesh Voxel
+                if self.spineToDendVoxel[self.voxelIndex] >= 0:
+                        self.mesh.append((self.neuroMesh,self.spineToDendVoxel[self.voxelIndex]))
+                if self.voxelIndex in self.psdToSpineVoxel:
+                        self.mesh.append((self.psdMesh,self.voxelIndex))
+            # if self.elecCompt.path in map(lambda x : x[0].path, self.psdMesh.elecComptList):
+            #     self.mesh.append((self.psdMesh,self.voxelIndex))
+            
         self.setWindowTitle(self.model.name)
-        #self.plugin = plugin
         self.border = 5
         self.comptPen = 6
         self.iconScale = 1
@@ -325,7 +335,6 @@ class  KineticsWidget(QtGui.QWidget):
         # else:
         #elf.sceneContainer.setSceneRect(self.sceneContainer.itemsBoundingRect())
         self.sceneContainer.setBackgroundBrush(QColor(230,220,219,120))
-        # print " mesh ",self.mesh
         self.updateModelView()
     '''
     def reset(self):
@@ -351,10 +360,17 @@ class  KineticsWidget(QtGui.QWidget):
         pass
 
     def updateModelView(self):
+        S = time.time()
         self.getMooseObj()
+        e = time.time()
+        DEBUG("a4 getMooseObj")
+        DEBUG(e-S)
+
         self.mooseObjOntoscene()
+        DEBUG ("mooseObjOntoscene")
+        DEBUG(time.time()-e)
         self.drawLine_arrow()  
-        self.view = GraphicalView(self.sceneContainer,self.border,self,self.createdItem,self.instance)
+        self.view = GraphicalView(self.sceneContainer,self.border,self,self.createdItem,self.instance,self.mesh,self.voxelIndex,self.mainWindow,self.multiScale)
         self.view.setAcceptDrops(True)
         self.layout().addWidget(self.view)
         '''
@@ -403,16 +419,16 @@ class  KineticsWidget(QtGui.QWidget):
     def getMooseObj(self):
         #This fun call 2 more function
         # -- setupMeshObj(self.modelRoot),
-        #    ----self.meshEntry has [meshEnt] = function: {}, Pool: {} etc
+        #    ----self.meshEntry has [meshEnt,volexIndex] = function: {}, Pool: {} etc
         # setupItem
-        # print " getMooseObj ",self.elecCompt, " " ,self.mesh
-        # print " type ",type(self.elecCompt)
-        DEBUG(self.elecCompt)
+        s1 = time.time()
         if self.elecCompt is not None:
             self.m = self.mesh
         else:
-            self.m = self.moose.wildcardFind(self.modelRoot+'/##[ISA=ChemCompt]')
-        #print " chemCompt ",self.m
+            self.comptList = self.moose.wildcardFind(self.modelRoot+'/##[ISA=ChemCompt]')
+            for t in self.comptList:
+                self.mesh.append((t,0))
+            self.m = self.mesh
         if self.m:
             self.xmin = 0.0
             self.xmax = 1.0
@@ -423,13 +439,22 @@ class  KineticsWidget(QtGui.QWidget):
 
             #self.meshEntry.clear= {}
             # Compartment and its members are setup
+            s2 = time.time()
             self.meshEntry,self.xmin,self.xmax,self.ymin,self.ymax,self.noPositionInfo = setupMeshObj(self.instance,self.mesh,self.voxelIndex)
+            print "44 ",type(self.meshEntry)
+            e2 = time.time()
+            # DEBUG("\t \t af4 setupMeshObj")
+            # DEBUG(e2-s2)
             self.autocoordinates = False
             if self.srcdesConnection:
                 self.srcdesConnection.clear()
             else:
                 self.srcdesConnection = {}
+
             setupItem(self.instance,self.srcdesConnection,self.mesh,self.voxelIndex)
+            e3 = time.time()
+            # DEBUG ("\t \t \t a4 setupItem")
+            # DEBUG(e3-e2)
             if not self.noPositionInfo:
                 self.autocoordinates = True
 
@@ -447,7 +472,8 @@ class  KineticsWidget(QtGui.QWidget):
             else: self.yratio = (self.size.height()-10)
             self.xratio = int(self.xratio)
             self.yratio = int(self.yratio)
-
+            # DEBUG("a4 mooseobj")
+            # DEBUG(time.time()-s1)
     def sizeHint(self):
         return QtCore.QSize(800,400)
 
@@ -476,6 +502,8 @@ class  KineticsWidget(QtGui.QWidget):
     def mooseObjOntoscene(self):
         #  All the compartments are put first on to the scene \
         #  Need to do: Check With upi if empty compartments exist
+        #print " mooseObjOntoscene ",self.qGraCompt
+        #
         self.qGraCompt   = {}
         self.mooseId_GObj = {}
         if self.qGraCompt:
@@ -486,17 +514,16 @@ class  KineticsWidget(QtGui.QWidget):
             self.mooseId_GObj.clear()
         else:
             self.mooseId_GObj = {}
-
         for cmpt in sorted(self.meshEntry.iterkeys()):
-            self.createCompt(cmpt)
-            self.qGraCompt[cmpt]
+            self.createCompt(cmpt[0])
+            self.qGraCompt[cmpt[0]]
             #comptRef = self.qGraCompt[cmpt]
 
         #Enzymes of all the compartments are placed first, \
         #     so that when cplx (which is pool object) queries for its parent, it gets its \
         #     parent enz co-ordinates with respect to QGraphicsscene """
-
         for cmpt,memb in self.meshEntry.items():
+            cmpt = cmpt[0]
             for enzObj in find_index(memb,'enzyme'):
                 enzinfo = enzObj.path+'/info'
                 if enzObj.className == 'Enz':
@@ -505,18 +532,22 @@ class  KineticsWidget(QtGui.QWidget):
                     enzItem = MMEnzItem(enzObj,self.qGraCompt[cmpt])
                 self.mooseId_GObj[self.moose.element(enzObj.getId())] = enzItem
                 self.setupDisplay(enzinfo,enzItem,"enzyme")
-
                 #self.setupSlot(enzObj,enzItem)
         for cmpt,memb in self.meshEntry.items():
+            cmpt = cmpt[0]
             for poolObj in find_index(memb,'pool'):
-                poolinfo = poolObj.path+'/info'
+                if poolObj.getDataIndex > 0:
+                    poolPath = poolObj.path[0:poolObj.path.rfind('[')]
+                    poolInfo =poolPath+'/info'
+                else:
+                    poolInfo = poolObj.path+'/info'
                 # DEBUG(poolObj)
                 # DEBUG(self.qGraCompt)
                 #depending on Editor Widget or Run widget pool will be created a PoolItem or PoolItemCircle
                 #poolItem = self.makePoolItem(poolObj,self.qGraCompt[cmpt])
                 poolItem = self.makePoolItem(poolObj,self.qGraCompt[cmpt])
                 self.mooseId_GObj[self.moose.element(poolObj.getId())] = poolItem
-                self.setupDisplay(poolinfo,poolItem,"pool")
+                self.setupDisplay(poolInfo,poolItem,"pool")
 
             for reaObj in find_index(memb,'reaction'):
                 reainfo = reaObj.path+'/info'
@@ -543,7 +574,6 @@ class  KineticsWidget(QtGui.QWidget):
                 cplxItem = CplxItem(cplxObj,self.mooseId_GObj[self.moose.element(cplxObj).parent])
                 self.mooseId_GObj[self.moose.element(cplxObj.getId())] = cplxItem
                 self.setupDisplay(cplxinfo,cplxItem,"cplx")
-
         # compartment's rectangle size is calculated depending on children
         self.comptChilrenBoundingRect()
         
@@ -622,8 +652,6 @@ class  KineticsWidget(QtGui.QWidget):
 
     def drawLine_arrow(self, itemignoreZooming=False):
         for inn,out in self.srcdesConnection.items():
-
-            #print "inn ",inn, " out ",out
             # self.srcdesConnection is dictionary which contains key,value \
             #    key is Enzyme or Reaction  and value [[list of substrate],[list of product]] (tuple)
             #    key is Function and value is [list of pool] (list)
@@ -728,6 +756,7 @@ class  KineticsWidget(QtGui.QWidget):
                                             self.updateArrow(j)
                             self.updateArrow(rectChilditem)
         else:
+            # print " position changed ",mooseObject,self.moose.element(mooseObject)
             mobj = self.mooseId_GObj[self.moose.element(mooseObject)]
             self.updateArrow(mobj)
             elePath = self.moose.element(mooseObject).path
@@ -824,7 +853,7 @@ class  KineticsWidget(QtGui.QWidget):
 
 class kineticEditorWidget(KineticsWidget):
     def __init__(self, plugin,*args):
-
+        print " kEW "
         KineticsWidget.__init__(self, plugin, *args)
         self.plugin = plugin
         self.insertMenu = QtGui.QMenu('&Insert')
