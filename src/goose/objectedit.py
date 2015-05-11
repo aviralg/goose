@@ -224,7 +224,6 @@ class ObjectEditModel(QtCore.QAbstractTableModel):
     def setData(self, index, value, role=QtCore.Qt.EditRole):
         if not index.isValid() or index.row () >= len(self.fields) or index.column() != 1:
             return False
-        print(value)
         field = self.fields[index.row()]
         if (role == QtCore.Qt.CheckStateRole):
             if (index.column() == 1):
@@ -435,7 +434,6 @@ class ObjectEditView(QtGui.QTableView):
                 +   "background-color: {0}; color: {0};".format(color.name())
                 +   "}"
                                       )
-        print " colt ",color
         self.colorDialog.setCurrentColor(color)
 
     def dataChanged(self, tl, br):
