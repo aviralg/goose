@@ -25,8 +25,7 @@ class KineticsDisplayItem(QtGui.QGraphicsWidget):
         self.setFlag(QtGui.QGraphicsItem.ItemIgnoresTransformations, False)
 
     def getParentMooseObject(self):
-        return self.moose.element(self.mobj).parent
-
+        return self.mobj.parent
     def getParentGraphicsObject(self):
         return self.parentItem()
 
@@ -47,7 +46,7 @@ class KineticsDisplayItem(QtGui.QGraphicsWidget):
             #print "itemChange ---->",self.mobj
         #    self.emit(QtCore.SIGNAL("qgtextPositionChange(PyQt_PyObject)"),self.mobj)
         if change == QtGui.QGraphicsItem.ItemSelectedChange and value == True:
-           self.emit(QtCore.SIGNAL("qgtextItemSelectedChange(PyQt_PyObject)"),self.moose.element(self.mobj))
+           self.emit(QtCore.SIGNAL("qgtextItemSelectedChange(PyQt_PyObject)"),self.mobj)
         #print " itemChange ",self.mobj,change,value
         return QtGui.QGraphicsItem.itemChange(self,change,value)
 
