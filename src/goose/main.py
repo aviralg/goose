@@ -100,7 +100,7 @@ class MainWindow(QMainWindow):
         self._console.setWidget(IPythonConsole( globals()
                                               , instances   = self.instances
                                               , instance    = self.instance
-                                              , goose       = self
+                                              , window      = self
                                               )
                                )
         self._console.setWindowTitle("Interactive Python Console")
@@ -456,14 +456,16 @@ class MainWindow(QMainWindow):
             # self.kkit_slot( "/model[0]/elec[0]/apical_f_113_0[0]"
             #               , 3452
             #               )
-            widget = PlotWidget(self.instance, "/model/graphs", "Conc")
+            # widget = PlotWidget(self.instance, "/model/graphs", "Conc")
+            # self.centralWidget().addSubWindow(widget)
+            # widget.show()
+            widget = KineticsWidget( self.instance
+                                   , elecCompt = self.instance["moose"].element("/model[0]/elec[0]/dend_f_3_0[0]")
+                                   , voxelIndex = 17
+                                   , mainWindow = self
+                                   )
             self.centralWidget().addSubWindow(widget)
             widget.show()
-            # widget = KineticsWidget( self.instance
-            #                        , elecCompt = self.instance["moose"].element("/model[0]/elec[0]/dend_f_3_0[0]")
-            #                        , voxelIndex = 17
-            #                        )
-            # self.centralWidget().addSubWindow(widget)
             # widget.show()
 
             # widget = KineticsWidget( self.instance
@@ -546,52 +548,60 @@ class MainWindow(QMainWindow):
         # self.disconnect_instance_slot()
         # self.close_instance_slot()
 
-    def create_plot_widget(self, plot_type, allowed_fields = ALL_FIELDS):
-        plot_dialog = QDialog()
-        plot_dialog.setLayout(QGridLayout())
-
-        plot_title_label  = QLabel("Plot Title")
-        plot_title_widget = QLineEdit()
-        plot_dialog.layout().addWidget(plot_title_widget)
-
-        plot_field_widget = QComboBox()
-        for field in allowed_fields:
-            plot_field_widget.addItem(FIELD_MAP[field]["name"])
-        plot_dialog.layout().addWidget(plot_field_widget)
-
-
-        plot_dialog.exec_()
+    def create_plot_widget(self, moose_object, field, plot_type, color):
+        index = str(len(self.get_plot_widgets()))
+        path = self.instance["model"].path + "/graph-" + index
+        if plot_type == LINE_PLOT:
+            plot_widget = LinePlotWidget( self.instance
+                                        , self.instance["moose"].Neutral(path)
+                                        , field
+                                        )
+        plot_widget.set_title_slot("Plot {index}".format(index = index))
+        plot_widget.setWindowTitle(
+            "Plot - {index} | {field}".format( index = index
+                                             , field = FIELD_DATA[field]["name"]
+                                             )
+                                  )
+        plot_widget.add(moose_object, color)
+        self.centralWidget().addSubWindow(plot_widget)
+        plot_widget.show()
 
     @QtCore.pyqtSlot(QPoint, object, str, str, str)
-    def plot_slot( position
-                 , moose_object    = None
-                 , allowed_fields  = ALL_FIELDS
-                 , plot_type       = LINE_PLOT
-                 , color           = AUTOMATIC
+    def plot_slot( self
+                 , position
+                 , moose_object
+                 , fields
+                 , plot_type
+                 , color
                  ):
         menu = QMenu()
-        for widget in self.get_plot_widgets(allowed_fields):
-            action = menu.addAction( widget.get_title()
-                                   + " (" + widget.get_field() + ")"
+        for widget in self.get_plot_widgets(fields):
+            action = menu.addAction(
+                "{title} ({field})".format( title = widget.get_title()
+                                          , field = FIELD_DATA[widget.get_field()]["name"]
+                                          )
                                    )
-            action.triggered.connect(lambda _, widget = widget : widget.add(moose_object, color))
+            action.triggered.connect(lambda x, w = widget : w.add(moose_object, color))
         menu.addSeparator()
-        action = menu.addAction("New Plot")
-        action.triggered.connect(
-            lambda : self.create_plot_widget( plot_type     = plot_type
-                                            , moose_object  = moose_object
-                                            , color         = color
-                                            )
-                                )
-        menu.exec_(self.mapToGlobal(position))
+        new_plot_menu = menu.addMenu("New Plot")
+        for field in fields:
+            action = new_plot_menu.addAction(FIELD_DATA[field]["name"])
+            action.triggered.connect( lambda x, f = field: self.create_plot_widget( moose_object
+                                                                      , f
+                                                                      , plot_type
+                                                                      , color
+                                                                      )
+                                    )
+        menu.exec_(position)
 
     @QtCore.pyqtSlot(str, list)
-    def get_plot_widgets(self, allowed_fields = ALL_FIELDS):
-        return filter( lambda widget: isinstance(widget, PlotWidget) and
-                                      widget.get_field() in allowed_fields
-                     , self.centralWidget().widgets()
-                     )
-
+    def get_plot_widgets(self, fields = ALL_FIELDS):
+        widgets = []
+        for subWindow in self.centralWidget().subWindowList():
+            widget = subWindow.widget()
+            if isinstance(widget, PlotWidget) and widget.get_field() in fields:
+                widgets.append(widget)
+        return widgets
 
     @pyqtSlot(object)
     def open_slot(self):

@@ -7,10 +7,12 @@ from PyQt4 import Qt, QtGui, QtCore
 
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
+from matplotlib.lines import Line2D
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 from matplotlib.figure import Figure
 import numpy
+from goose.utils import *
 
 class PlotWidget(QWidget):
     def __init__( self
@@ -33,6 +35,9 @@ class PlotWidget(QWidget):
         self.figure_height  = figure_height
         self.dpi            = dpi
         self.grid_visible   = False
+        self.legend_visible = True
+        self.facecolor = facecolor
+        self.legend_alpha = legend_alpha
         self._setup_prelude()
         self._setup_plot_canvas()
         self._setup_navigation_toolbar()
@@ -40,16 +45,39 @@ class PlotWidget(QWidget):
         self._setup_context_menu()
         self._setup_signal_slot_connections()
         self._setup_postlude()
-        self.add(self.moose.element("/model[0]/elec[0]/apical_f_113_0[3452]"))
         # self.remove()
 
-    def add(moose_object):
-        (table_name, xdata, ydata) = self.create_table(moose_object)
-        self.canvas.plot( xdata
-                        , ydata
-                        , label = moose_object.name
-                        , gid   = table_name
-                        )
+
+    # def _read_tables(self):
+    #     for table in self.container.children():
+    #         object_name = table.neighbors["requestOut"][0][0].name
+    #         field       = table["neighbors"][]
+
+
+
+    def get_title(self):
+        return self.axes.get_title()
+
+    @QtCore.pyqtSlot(str)
+    def set_title_slot(self, title):
+        self.axes.set_title(title)
+
+    def get_field(self):
+        return self.field
+
+    def add(self, moose_object, color = AUTOMATIC):
+        table_name = self._object_path_to_table_name(moose_object.path)
+        table_path = self.container.path + "/" + table_name
+        if self.moose.exists(table_path): return
+        table = self.create_table(table_path)
+        line = self.axes.plot( numpy.array([])
+                             , numpy.array([])
+                             , label = moose_object.name
+                             , gid   = table_name
+                             )[0]
+        print(color)
+        if color is not AUTOMATIC : line.set_color(color)
+        self._create_legend()
 
     def _setup_prelude(self):
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
@@ -92,6 +120,8 @@ class PlotWidget(QWidget):
         self.canvas = FigureCanvas(self.figure)
         self.layout().addWidget(self.canvas, 0, 0)
         self.axes = self.figure.add_subplot(1, 1, 1)
+        self.legend = None
+        self._set_field(self.field)
 
     def _create_legend(self):
         self.legend = self.axes.legend( loc='upper right'
@@ -174,11 +204,13 @@ class PlotWidget(QWidget):
         if self.legend is None : return
         self.legend.set_visible(True)
         self.toggle_legend_action.setText("Hide Legend")
+        self.draw_slot()
 
     def hide_legend_slot(self):
         if self.legend is None : return
         self.legend.set_visible(False)
         self.toggle_legend_action.setText("Show Legend")
+        self.draw_slot()
 
     def toggle_legend_slot(self):
         self.hide_legend_slot() if self.legend_visible else self.show_legend_slot()
@@ -186,7 +218,11 @@ class PlotWidget(QWidget):
 
 
     def _set_field(self, field):
-        pass
+        self.axes.set_xlabel("Time (s)")
+        self.axes.set_ylabel( "{name} ({unit})".format( name = FIELD_DATA[field]["name"]
+                                                      , unit = FIELD_DATA[field]["unit"]
+                                                      )
+                            )
         # (self._field, self._unit, self._y_label) = self._fields[field.lower()]
         # self.
 
@@ -226,11 +262,8 @@ class PlotWidget(QWidget):
     #     y_field =
     #     return  [self._y_field()]
 
-    def create_table(self, moose_object):
-        table_name = self._object_path_to_table_name(moose_object.path)
-        self._table_class(self.container.path + "/" + table_name)
-        pass
-
+    def create_table(self, table_path):
+        return self.moose.__dict__[FIELD_DATA[self.field]["table"]](table_path)
 
     def remove_plot(self):
         pass
@@ -272,7 +305,8 @@ class PlotWidget(QWidget):
         # filename = str(directory)+'/'+'%s.csv' % (ySrc.name)
         # np.savetxt(filename, np.vstack((x, y)).transpose())
         # print 'Saved data from %s and %s in %s' % (xSrc.path, ySrc.path, filename)
-
+    def closeEvent(self, event):
+        self.moose.delete(self.container.path)
 
 class LinePlotWidget(PlotWidget):
 
@@ -284,7 +318,7 @@ class LinePlotWidget(PlotWidget):
                                  , simdata["tables"][line.get_gid()]
                                  )
 
-    @QtCore.pyqtSlot(matplotlib.lines.Line2D, numpy.array, numpy.array)
+    # @QtCore.pyqtSlot(Line2D, numpy.array, numpy.array)
     def update_plot_slot(self, line, simtime, ydata):
         xdata = numpy.linspace( 0.0
                               , simtime

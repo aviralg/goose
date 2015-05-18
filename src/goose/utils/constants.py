@@ -39,16 +39,16 @@ RAINBOW_COLORMAP_PATH               = pkg_resources.resource_filename(
     goose.__name__ , "data/colormaps/rainbow.pkl"
                                                                      )
 PLOT_ICON_PATH          = pkg_resources.resource_filename(
-    goose.__name__ , "data/icons/plot.svg"
+    goose.__name__ , "data/icons/line-chart.svg"
                                                                       )
 CLONE_ICON_PATH          = pkg_resources.resource_filename(
-    goose.__name__ , "data/icons/clone.svg"
+    goose.__name__ , "data/icons/files-o.svg"
                                                                       )
 DELETE_ICON_PATH          = pkg_resources.resource_filename(
-    goose.__name__ , "data/icons/delete.svg"
+    goose.__name__ , "data/icons/remove.svg"
                                                                       )
 MOVE_ICON_PATH          = pkg_resources.resource_filename(
-    goose.__name__ , "data/icons/move.svg"
+    goose.__name__ , "data/icons/arrows-alt.svg"
                                                                       )
 EXTENSIONS          = { "SBML"      :   ["xml"]
                       , "Python"    :   ["py"]
@@ -71,7 +71,7 @@ SCATTER_PLOT        = "SCATTER PLOT"
 
 TIME                = "TIME"
 CONCENTRATION       = "CONCENTRATION"
-MOLECULES           = "MEOLCULES"
+MOLECULES           = "MOLECULES"
 MEMBRANE_VOLTAGE    = "MEMBRANE VOLTAGE"
 MEMBRANE_CURRENT    = "MEMBRANE CURRENT"
 
@@ -84,18 +84,22 @@ ALL_FIELDS = [ CONCENTRATION
 FIELD_DATA   =   { CONCENTRATION        :   { "name"        :   "Concentration"
                                             , "moose_field" :   "getConc"
                                             , "unit"        :   "mM"
+                                            , "table"       :   "Table2"
                                             }
                  , MOLECULES            :   { "name"        :   "Molecules"
                                             , "moose_field" :   "getN"
                                             , "unit"        :   None
+                                            , "table"       :   "Table2"
                                             }
                  , MEMBRANE_VOLTAGE     :   { "name"        :   "Concentration"
                                             , "moose_field" :   "getVm"
                                             , "unit"        :   "mV"
+                                            , "table"       :   "Table"
                                             }
                  , MEMBRANE_CURRENT     :   { "name"        :   "Membrane Current"
                                             , "moose_field" :   "getIm"
                                             , "unit"        :   "mA"
+                                            , "table"       :   "Table"
                                             }
                  , TIME                 :   { "name"        :   "Time"
                                             , "moose_field" :   "getTime"
