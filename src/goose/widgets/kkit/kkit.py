@@ -189,7 +189,7 @@ class KkitRunView(MooseEditorView):
         MooseEditorView.__init__(self, plugin)
         #self.dataTable =dataTable
         self.plugin = plugin
-    
+
     # def getToolPanes(self):
     #     return super(KkitRunView, self).getToolPanes()
 
@@ -201,7 +201,7 @@ class KkitRunView(MooseEditorView):
 
     # def getToolBars(self):
     #     return self._toolBars
-    
+
     def getCentralWidget(self):
         if self._centralWidget is None:
             self._centralWidget = kineticRunWidget(self.plugin)
@@ -214,7 +214,7 @@ class KkitEditorView(MooseEditorView):
     #def __init__(self, plugin, dataTable):
     def __init__(self, plugin):
         MooseEditorView.__init__(self, plugin)
-        # EditorView  
+        # EditorView
         #self.dataTable = dataTable
         #self.fileinsertMenu = QtGui.QMenu('&File')
         # if not hasattr(self,'SaveModelAction'):
@@ -242,7 +242,7 @@ class KkitEditorView(MooseEditorView):
     #                 QtGui.QMessageBox.warning(None,'Could not save the Model','\n Error in the consistency check')
     #             else:
     #                  QtGui.QMessageBox.information(None,'Saved the Model','\n File Saved to \'{filename}\''.format(filename =filename),QtGui.QMessageBox.Ok)
-    
+
     # def getToolPanes(self):
     #     return super(KkitEditorView, self).getToolPanes()
 
@@ -254,7 +254,7 @@ class KkitEditorView(MooseEditorView):
 
     # def getToolBars(self):
     #     return self._toolBars
-    
+
     def getCentralWidget(self):
         if self._centralWidget is None:
             self._centralWidget = kineticEditorWidget(self.plugin)
@@ -293,6 +293,10 @@ class  KineticsWidget(QtGui.QWidget):
             if self.elecCompt.path in map(lambda x : x[0].path, self.neuroMesh.elecComptList):
                 self.mesh.append((self.neuroMesh,self.voxelIndex))
                 #checking for existance of spine and psd on dend Voxel
+                DEBUG(type(self.voxelIndex))
+                DEBUG(len(self.dendVoxelToSpineVoxel))
+                DEBUG(self.dendVoxelToSpineVoxel)
+                DEBUG(self.dendVoxelToSpineVoxel[0])
                 if self.dendVoxelToSpineVoxel[self.voxelIndex] >= 0:
                     self.sVolexIndex = self.dendVoxelToSpineVoxel[self.voxelIndex]
                     self.mesh.append((self.spineMesh,self.sVolexIndex))
@@ -307,7 +311,7 @@ class  KineticsWidget(QtGui.QWidget):
                         self.mesh.append((self.psdMesh,self.voxelIndex))
             # if self.elecCompt.path in map(lambda x : x[0].path, self.psdMesh.elecComptList):
             #     self.mesh.append((self.psdMesh,self.voxelIndex))
-            
+
         self.setWindowTitle(self.model.name)
         self.border = 5
         self.comptPen = 6
@@ -369,7 +373,7 @@ class  KineticsWidget(QtGui.QWidget):
         self.mooseObjOntoscene()
         DEBUG ("mooseObjOntoscene")
         DEBUG(time.time()-e)
-        self.drawLine_arrow()  
+        self.drawLine_arrow()
         self.view = GraphicalView(self.sceneContainer,self.border,self,self.createdItem,self.instance,self.mesh,self.voxelIndex,self.mainWindow,self.multiScale)
         self.view.setAcceptDrops(True)
         self.layout().addWidget(self.view)
@@ -576,7 +580,7 @@ class  KineticsWidget(QtGui.QWidget):
                 self.setupDisplay(cplxinfo,cplxItem,"cplx")
         # compartment's rectangle size is calculated depending on children
         self.comptChilrenBoundingRect()
-        
+
 
     def comptChilrenBoundingRect(self):
         for k, v in self.qGraCompt.items():
@@ -736,7 +740,7 @@ class  KineticsWidget(QtGui.QWidget):
         self.object2line[ src ].append( ( qgLineitem, des,endtype,line) )
         self.object2line[ des ].append( ( qgLineitem, src,endtype,line ) )
         qgLineitem.setPen(pen)
-       
+
     def positionChange(self,mooseObject):
         #If the item position changes, the corresponding arrow's are calculated
         if isinstance(self.moose.element(mooseObject),self.moose.ChemCompt):

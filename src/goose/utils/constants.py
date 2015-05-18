@@ -63,3 +63,42 @@ CHEMICAL_SIMULATION_CLOCK_IDS       = range(11, 18)
 
 ELECTRICAL_PLOT_CLOCK_IDS           = [8]
 ELECTRICAL_SIMULATION_CLOCK_IDS     = range(0, 8)
+
+AUTOMATIC           = "AUTOMATIC"
+
+LINE_PLOT           = "LINE PLOT"
+SCATTER_PLOT        = "SCATTER PLOT"
+
+TIME                = "TIME"
+CONCENTRATION       = "CONCENTRATION"
+MOLECULES           = "MEOLCULES"
+MEMBRANE_VOLTAGE    = "MEMBRANE VOLTAGE"
+MEMBRANE_CURRENT    = "MEMBRANE CURRENT"
+
+ALL_FIELDS = [ CONCENTRATION
+             , MOLECULES
+             , MEMBRANE_VOLTAGE
+             , MEMBRANE_CURRENT
+             ]
+
+FIELD_DATA   =   { CONCENTRATION        :   { "name"        :   "Concentration"
+                                            , "moose_field" :   "getConc"
+                                            , "unit"        :   "mM"
+                                            }
+                 , MOLECULES            :   { "name"        :   "Molecules"
+                                            , "moose_field" :   "getN"
+                                            , "unit"        :   None
+                                            }
+                 , MEMBRANE_VOLTAGE     :   { "name"        :   "Concentration"
+                                            , "moose_field" :   "getVm"
+                                            , "unit"        :   "mV"
+                                            }
+                 , MEMBRANE_CURRENT     :   { "name"        :   "Membrane Current"
+                                            , "moose_field" :   "getIm"
+                                            , "unit"        :   "mA"
+                                            }
+                 , TIME                 :   { "name"        :   "Time"
+                                            , "moose_field" :   "getTime"
+                                            , "unit"        :   "s"
+                                            }
+                 }

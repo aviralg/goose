@@ -98,8 +98,9 @@ class MainWindow(QMainWindow):
     def _setup_global_widgets(self):
         self._console = QDockWidget(self)
         self._console.setWidget(IPythonConsole( globals()
-                                              , instances = self.instances
-                                              , instance = self.instance
+                                              , instances   = self.instances
+                                              , instance    = self.instance
+                                              , goose       = self
                                               )
                                )
         self._console.setWindowTitle("Interactive Python Console")
@@ -397,7 +398,7 @@ class MainWindow(QMainWindow):
                 , "service"  :   connection.root
                 , "thread"   :   rpyc.BgServingThread(connection)
                 }
-            
+
             self._console.widget().update_namespace( instance = self.instance
                                                    , moose = self.instance["moose"]
                                                    , conn  = self.instance["conn"]
@@ -423,13 +424,21 @@ class MainWindow(QMainWindow):
             # widget = KineticsWidget(self.instance,mainWindow=self,multiScale = False)
             # self.centralWidget().addSubWindow(widget)
             # widget.show()
-            
-            widget = KineticsWidget( self.instance
-                                   , elecCompt = self.instance["moose"].element("/model/elec/dend_1_2")
-                                   , voxelIndex = 23,mainWindow = self,multiScale = True
-                                   )
-            self.centralWidget().addSubWindow(widget)
-            widget.show()
+
+            # widget = NeuroKitWidget(self.instance, signals = self.signals, slot = self.kkit_slot)
+            # self.centralWidget().addSubWindow(widget)
+            # widget.show()
+
+            # widget = NeuroKitWidget(self.instance, signals = self.signals, slot = self.kkit_slot, details = 1)
+            # self.centralWidget().addSubWindow(widget)
+            # widget.show()
+
+            # widget = KineticsWidget( self.instance
+            #                        , elecCompt = self.instance["moose"].element("/model/elec/dend_1_2")
+            #                        , voxelIndex = 23,mainWindow = self,multiScale = True
+            #                        )
+            # self.centralWidget().addSubWindow(widget)
+            # widget.show()
 
             # widget1 = KineticsWidget( self.instance
             #                        , elecCompt = self.instance["moose"].element("/model/elec/dend_1_2")
@@ -444,10 +453,18 @@ class MainWindow(QMainWindow):
             #                        )
             # self.centralWidget().addSubWindow(widget2)
             # widget2.show()
+            # self.kkit_slot( "/model[0]/elec[0]/apical_f_113_0[0]"
+            #               , 3452
+            #               )
+            widget = PlotWidget(self.instance, "/model/graphs", "Conc")
+            self.centralWidget().addSubWindow(widget)
+            widget.show()
             # widget = KineticsWidget( self.instance
-            #                        , elecCompt = self.instance["moose"].element("/model/elec/head0")
-            #                        , voxelIndex = 0
+            #                        , elecCompt = self.instance["moose"].element("/model[0]/elec[0]/dend_f_3_0[0]")
+            #                        , voxelIndex = 17
             #                        )
+            # self.centralWidget().addSubWindow(widget)
+            # widget.show()
 
             # widget = KineticsWidget( self.instance
             #                        , elecCompt = self.instance["moose"].element("/model[0]/elec[0]/soma_1_0")
@@ -457,7 +474,7 @@ class MainWindow(QMainWindow):
             #                        , elecCompt = self.instance["moose"].element("/model[0]/elec[0]/apical_e_2_0")
             #                        , voxelIndex = 1
             #                        )
-            
+
             # self.centralWidget().addSubWindow(widget1)
             # widget1.show()
 
@@ -467,6 +484,16 @@ class MainWindow(QMainWindow):
                 raise serr
             DEBUG("Failed to connect to Moose server on " + host + ":" + str(port))
             QTimer.singleShot(1000, lambda : self.connect_to_moose_server(host, port, pid, filename))
+
+    def kkit_slot(self, electrical_compartment_path, index):
+        widget = KineticsWidget( self.instance
+                               , elecCompt = self.instance["moose"].element(electrical_compartment_path)
+                               , voxelIndex = index
+                               , multiScale = True
+                               , mainWindow = self
+                               )
+        self.centralWidget().addSubWindow(widget)
+        widget.show()
 
     def load_slot(self, filename):
         (host, port, pid) = self.start_moose_server()
@@ -518,6 +545,52 @@ class MainWindow(QMainWindow):
         # self.read_instance_slot()
         # self.disconnect_instance_slot()
         # self.close_instance_slot()
+
+    def create_plot_widget(self, plot_type, allowed_fields = ALL_FIELDS):
+        plot_dialog = QDialog()
+        plot_dialog.setLayout(QGridLayout())
+
+        plot_title_label  = QLabel("Plot Title")
+        plot_title_widget = QLineEdit()
+        plot_dialog.layout().addWidget(plot_title_widget)
+
+        plot_field_widget = QComboBox()
+        for field in allowed_fields:
+            plot_field_widget.addItem(FIELD_MAP[field]["name"])
+        plot_dialog.layout().addWidget(plot_field_widget)
+
+
+        plot_dialog.exec_()
+
+    @QtCore.pyqtSlot(QPoint, object, str, str, str)
+    def plot_slot( position
+                 , moose_object    = None
+                 , allowed_fields  = ALL_FIELDS
+                 , plot_type       = LINE_PLOT
+                 , color           = AUTOMATIC
+                 ):
+        menu = QMenu()
+        for widget in self.get_plot_widgets(allowed_fields):
+            action = menu.addAction( widget.get_title()
+                                   + " (" + widget.get_field() + ")"
+                                   )
+            action.triggered.connect(lambda _, widget = widget : widget.add(moose_object, color))
+        menu.addSeparator()
+        action = menu.addAction("New Plot")
+        action.triggered.connect(
+            lambda : self.create_plot_widget( plot_type     = plot_type
+                                            , moose_object  = moose_object
+                                            , color         = color
+                                            )
+                                )
+        menu.exec_(self.mapToGlobal(position))
+
+    @QtCore.pyqtSlot(str, list)
+    def get_plot_widgets(self, allowed_fields = ALL_FIELDS):
+        return filter( lambda widget: isinstance(widget, PlotWidget) and
+                                      widget.get_field() in allowed_fields
+                     , self.centralWidget().widgets()
+                     )
 
 
     @pyqtSlot(object)

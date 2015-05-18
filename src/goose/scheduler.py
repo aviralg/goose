@@ -15,6 +15,8 @@ class SchedulingWidget(QToolBar):
                 , slots         = None
                 ):
         super(SchedulingWidget, self).__init__(parent)
+        self.setFloatable(False)
+        self.setMovable(False)
         self._model         = model
         self._application   = application
         self._parent        = parent
@@ -23,7 +25,7 @@ class SchedulingWidget(QToolBar):
         self._create()
 
     def _create(self):
-        self._run_simulation_button = QPushButton(self)
+        self._run_simulation_button = QPushButton("&Run", self)
         self._run_simulation_button.setIcon(QIcon(RUN_SIMULATION_ICON_PATH))
         self._run_simulation_button.setToolTip("Run/Resume Simulation")
         self._run_simulation_button.setFlat(True)
@@ -33,7 +35,7 @@ class SchedulingWidget(QToolBar):
                                                    )
         self.addWidget(self._run_simulation_button)
 
-        self._stop_simulation_button = QPushButton(self)
+        self._stop_simulation_button = QPushButton("&Stop", self)
         self._stop_simulation_button.setIcon(QIcon(STOP_SIMULATION_ICON_PATH))
         self._stop_simulation_button.setToolTip("Stop/Pause Simulation")
         self._stop_simulation_button.setFlat(True)
@@ -41,7 +43,7 @@ class SchedulingWidget(QToolBar):
         self._stop_simulation_button.clicked.connect(self._slots["simulation"]["pause"])
         self.addWidget(self._stop_simulation_button)
 
-        self._reset_simulation_button = QPushButton(self)
+        self._reset_simulation_button = QPushButton("&Reset", self)
         self._reset_simulation_button.setIcon(QIcon(RESET_SIMULATION_ICON_PATH))
         self._reset_simulation_button.setToolTip("Reset Simulation")
         self._reset_simulation_button.setFlat(True)
