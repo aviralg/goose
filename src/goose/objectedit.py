@@ -224,7 +224,6 @@ class ObjectEditModel(QtCore.QAbstractTableModel):
     def setData(self, index, value, role=QtCore.Qt.EditRole):
         if not index.isValid() or index.row () >= len(self.fields) or index.column() != 1:
             return False
-        print(value)
         field = self.fields[index.row()]
         if (role == QtCore.Qt.CheckStateRole):
             if (index.column() == 1):
@@ -385,7 +384,7 @@ class ObjectEditView(QtGui.QTableView):
         self.colorButton = QtGui.QPushButton()
         self.colorDialog = QtGui.QColorDialog()
         self.textEdit    = QTextEdit()
-        print "ObjectEditView",self.model().fields.index("Color")
+        #print "ObjectEditView",self.model().fields.index("Color")
         try:
             notesIndex = self.model().fields.index("Notes")
             self.setIndexWidget(self.model().index(notesIndex,1), self.textEdit)
@@ -417,7 +416,14 @@ class ObjectEditView(QtGui.QTableView):
             #     lambda color:
             #
             #self.setColor(getColor(self.model().mooseObject.path+'/info')[1])
-            self.setColor(getColor(mobject.path+'/info',self.moose)[1])
+
+            # Harsha: for multiscale model indexing is removed
+            if mobject.getDataIndex > 0:
+                mobjPath = mobject.path[0:mobject.path.rfind('[')]
+                mobjInfo = mobjPath+'/info'
+            else:
+                mobjInfo = mobject.path+'/info'
+            self.setColor(getColor(mobjInfo,self.moose)[1])
         except:
             pass
         print 'Created view with', mobject

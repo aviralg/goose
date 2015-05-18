@@ -9,7 +9,7 @@ from PyQt4 import QtSvg
 
 class GraphicalView(QtGui.QGraphicsView):
 
-    def __init__(self,parent,border,layoutPt,createdItem,instance,mesh,voxelIndex,mainWindow,mulitScale):
+    def __init__(self,parent,border,layoutPt,createdItem,instance,mesh,voxelIndex,mainWindow,multiScale):
         QtGui.QGraphicsView.__init__(self,parent)
         self.mesh = mesh
         self.voxelIndex = voxelIndex
@@ -24,6 +24,7 @@ class GraphicalView(QtGui.QGraphicsView):
 
         self.instance = instance
         self.mainWindow = mainWindow
+        self.multiScale = multiScale
         self.moose = instance["moose"]
         self.connectionSignImagePath = "../gui/icons/connection.png"
         self.connectionSignImage     = QImage(self.connectionSignImagePath)
@@ -52,7 +53,7 @@ class GraphicalView(QtGui.QGraphicsView):
         self.iconScale = 1
         self.arrowsize = 2
         self.defaultComptsize = 5
-        if mulitScale == True:
+        if self.multiScale == True:
             self.connectorlist = {"plot": None ,"move": None}
         else:
             self.connectorlist = {"plot": None ,"clone": None,"move": None,"delete": None}
@@ -74,12 +75,12 @@ class GraphicalView(QtGui.QGraphicsView):
                                         , "sign"     :  None
                                         , "pos"    :  None
                                         }
-                , "move"       :   { "happened": False
-                                   }
-                , "release"    :   { "mode"    : INVALID
-                                   , "item"    : None
-                                   , "sign"    : None
-                                   }
+                    , "move"        :   { "happened": False
+                                        }
+                    , "release"     :   { "mode"    : INVALID
+                                        , "item"    : None
+                                        , "sign"    : None
+                                        }
                 }
 
 
@@ -188,7 +189,10 @@ class GraphicalView(QtGui.QGraphicsView):
                 QtGui.QApplication.setOverrideCursor(QtGui.QCursor(pixmap))
 
         if itemType == ITEM:
-            self.drawExpectedConnection(event)
+            if self.multiScale == True:
+                pass
+            else:
+                self.drawExpectedConnection(event)
 
         if itemType == COMPARTMENT_BOUNDARY:
             initial = self.mapToScene(self.state["press"]["pos"])
@@ -272,13 +276,17 @@ class GraphicalView(QtGui.QGraphicsView):
 
             else:
                 if isinstance(self.state["release"]["item"], KineticsDisplayItem):
-                    if not self.moose.element(self.state["press"]["item"].mobj) == self.moose.element(self.state["release"]["item"].mobj):
-                        self.populate_srcdes( self.state["press"]["item"].mobj
-                                            , self.state["release"]["item"].mobj
-                                            )
+                    if self.multiScale == False:
+                        if not self.moose.element(self.state["press"]["item"].mobj) == self.moose.element(self.state["release"]["item"].mobj):
+                            self.populate_srcdes( self.state["press"]["item"].mobj
+                                                , self.state["release"]["item"].mobj
+                                                )
+                        else:
+                            pass
                     else:
                         pass
-                self.removeExpectedConnection()
+                if self.multiScale == False:
+                    self.removeExpectedConnection()
                 self.removeConnector()
 
         if clickedItemType  == CONNECTOR:
@@ -346,13 +354,11 @@ class GraphicalView(QtGui.QGraphicsView):
                         t = self.moose.element(cloneObj.parent().mobj)
                         name = t.name
                         if isinstance(cloneObj.parent().mobj,self.moose.PoolBase):
-                            #print " lKey ",lKey
                             retValue = self.objExist(lKey.path,name,iP) 
                             if retValue != None:
                                 name += retValue
 
                             pmooseCp = self.moose.copy(t,lKey.path,name,1)
-                            #if moose.copy failed then check for path != '/'
                             if pmooseCp.path != '/':
                                 ct = self.moose.element(pmooseCp)
                                 concInit = pmooseCp.concInit[0]
@@ -393,9 +399,12 @@ class GraphicalView(QtGui.QGraphicsView):
                             srcdesString = ((self.state["release"]["item"]).mobj).className
                             QtGui.QMessageBox.information(None,'Dropping Not possible','Dropping on \'{srcdesString}\' not allowed'.format(srcdesString = srcdesString),QtGui.QMessageBox.Ok)
         if clickedItemType == CONNECTION:
-            popupmenu = QtGui.QMenu('PopupMenu', self)
-            popupmenu.addAction("Delete", lambda : self.deleteConnection(item))
-            popupmenu.exec_(self.mapToGlobal(event.pos()))
+            if self.multiScale == True:
+                pass
+            else:
+                popupmenu = QtGui.QMenu('PopupMenu', self)
+                popupmenu.addAction("Delete", lambda : self.deleteConnection(item))
+                popupmenu.exec_(self.mapToGlobal(event.pos()))
         
         if clickedItemType == COMPARTMENT_BOUNDARY:
             if not self.state["move"]["happened"]:
@@ -593,12 +602,14 @@ class GraphicalView(QtGui.QGraphicsView):
                                           )
 
     def objExist(self,path,name,index):
-        print "index ",index,path,name
+        #Need to check what to do if group come's b/w compartment and object
+        #Ideally /compartment/group/obj != /compartment/obj WRT path, but object belong to same
+        #compartment.
+
         if index == 0:
             fPath = path+'/'+name
         else:
             fPath = path+'/'+name+'_'+str(index)
-        print " fpath ",fPath
         if self.moose.exists(fPath):
             index += 1
             return self.objExist(path,name,index)
@@ -962,52 +973,55 @@ class GraphicalView(QtGui.QGraphicsView):
         #delete Items 
         ## ObjectEditor signal is disconnected here
         #self.layoutPt.plugin.mainWindow.objectEditSlot('/', False)
-        if isinstance(item,KineticsDisplayItem):
-            if self.moose.exists(item.mobj.path):
-                # if isinstance(item.mobj,Function):
-                #     print " inside the function"
-                #     for items in moose.element(item.mobj.path).children:
-                #         print items
-                if isinstance(item,PoolItem) or isinstance(item,BufPool):
-                    # pool is item is removed, then check is made if its a parent to any
-                    # enz if 'yes', then enz and its connection are removed before
-                    # removing Pool
-                    for items in self.moose.element(item.mobj.path).children:
-                        # if isinstance(moose.element(items), Function):
-                        #     gItem = self.layoutPt.mooseId_GObj[moose.element(items)]
-                        #     for l in self.layoutPt.object2line[gItem]:
-                        #         sceneItems = self.sceneContainerPt.items()
-                        #         if l[0] in sceneItems:
-                        #             #deleting the connection which is connected to Enz
-                        #             self.sceneContainerPt.removeItem(l[0])
-                        #     moose.delete(items)
-                        #     self.sceneContainerPt.removeItem(gItem)    
-                        if isinstance(self.moose.element(items), self.moose.EnzBase):
-                            gItem = self.layoutPt.mooseId_GObj[self.moose.element(items)]
-                            for l in self.layoutPt.object2line[gItem]:
-                                # Need to check if the connection on the scene exist
-                                # or its removed from some other means
-                                # E.g Enz to pool and pool to Enz is connected, 
-                                # when enz is removed the connection is removed, 
-                                # but when pool tried to remove then qgraphicscene says 
-                                # "item scene is different from this scene"
-                                sceneItems = self.sceneContainerPt.items()
-                                if l[0] in sceneItems:
-                                    #deleting the connection which is connected to Enz
-                                    self.sceneContainerPt.removeItem(l[0])
-                            self.moose.delete(items)
-                            self.sceneContainerPt.removeItem(gItem)
+        if self.multiScale == True:
+            pass
+        else:
+            if isinstance(item,KineticsDisplayItem):
+                if self.moose.exists(item.mobj.path):
+                    # if isinstance(item.mobj,Function):
+                    #     print " inside the function"
+                    #     for items in moose.element(item.mobj.path).children:
+                    #         print items
+                    if isinstance(item,PoolItem) or isinstance(item,self.moose.BufPool):
+                        # pool is item is removed, then check is made if its a parent to any
+                        # enz if 'yes', then enz and its connection are removed before
+                        # removing Pool
+                        for items in self.moose.element(item.mobj.path).children:
+                            # if isinstance(moose.element(items), Function):
+                            #     gItem = self.layoutPt.mooseId_GObj[moose.element(items)]
+                            #     for l in self.layoutPt.object2line[gItem]:
+                            #         sceneItems = self.sceneContainerPt.items()
+                            #         if l[0] in sceneItems:
+                            #             #deleting the connection which is connected to Enz
+                            #             self.sceneContainerPt.removeItem(l[0])
+                            #     moose.delete(items)
+                            #     self.sceneContainerPt.removeItem(gItem)    
+                            if isinstance(self.moose.element(items), self.moose.EnzBase):
+                                gItem = self.layoutPt.mooseId_GObj[self.moose.element(items)]
+                                for l in self.layoutPt.object2line[gItem]:
+                                    # Need to check if the connection on the scene exist
+                                    # or its removed from some other means
+                                    # E.g Enz to pool and pool to Enz is connected, 
+                                    # when enz is removed the connection is removed, 
+                                    # but when pool tried to remove then qgraphicscene says 
+                                    # "item scene is different from this scene"
+                                    sceneItems = self.sceneContainerPt.items()
+                                    if l[0] in sceneItems:
+                                        #deleting the connection which is connected to Enz
+                                        self.sceneContainerPt.removeItem(l[0])
+                                self.moose.delete(items)
+                                self.sceneContainerPt.removeItem(gItem)
 
-                for l in self.layoutPt.object2line[item]:
-                    sceneItems = self.sceneContainerPt.items()
-                    if l[0] in sceneItems:
-                        self.sceneContainerPt.removeItem(l[0])
-                self.sceneContainerPt.removeItem(item)
-                self.moose.delete(item.mobj)
-                for key, value in self.layoutPt.object2line.items():
-                    self.layoutPt.object2line[key] = filter( lambda tup: tup[1] != item ,value)
-                self.layoutPt.getMooseObj()
-                setupItem(self.instance,self.layoutPt.srcdesConnection,self.mesh,self.voxelIndex) 
+                    for l in self.layoutPt.object2line[item]:
+                        sceneItems = self.sceneContainerPt.items()
+                        if l[0] in sceneItems:
+                            self.sceneContainerPt.removeItem(l[0])
+                    self.sceneContainerPt.removeItem(item)
+                    self.moose.delete(item.mobj)
+                    for key, value in self.layoutPt.object2line.items():
+                        self.layoutPt.object2line[key] = filter( lambda tup: tup[1] != item ,value)
+                    self.layoutPt.getMooseObj()
+                    setupItem(self.instance,self.layoutPt.srcdesConnection,self.mesh,self.voxelIndex) 
 
     def zoomSelections(self, x0, y0, x1, y1):
         self.fitInView(self.mapToScene(QtCore.QRect(x0, y0, x1 - x0, y1 - y0)).boundingRect(), Qt.Qt.KeepAspectRatio)
