@@ -78,13 +78,9 @@ def setupMeshObj(instance,mesh,voxelIndex):
                     objInfo = m.parent.path+'/info'
                 elif isinstance(moose.element(m),moose.PoolBase):
                     mollist.append(m)
-                    if m.getDataIndex > 0:
-                        #mpath = re.sub(r'\[([^]]+)\]', '',m.path)
-                        mpath = m.path[0:m.path.rfind('[')]
-                        #print " test ",m.path,moose.element(m.path)
-                        objInfo = mpath+'/info'
-                    else:
-                         objInfo = m.path+'/info'   
+                    # multiscale zeroth Voxel has x,y,color,bgcolor info and only pool have different
+                    # voxel index.When accessing any information for Pool it has to be zeroth Voxel index
+                    objInfo = m.vec[0].path+'/info'
                 xcord.append(xyPosition(objInfo,'x',moose))
                 ycord.append(xyPosition(objInfo,'y',moose))
                 f1 = time.time()
@@ -138,6 +134,7 @@ def getxyCord(xcord,ycord,list1,instance):
 
             xcord.append(xyPosition(objInfo,'x',moose))
             ycord.append(xyPosition(objInfo,'y',moose))
+
 #def setupItem(modelPath,cntDict):
 def setupItem(instance,cntDict,mesh,voxelIndex):
     '''This function collects information of what is connected to what. \

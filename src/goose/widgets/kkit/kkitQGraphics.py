@@ -12,6 +12,7 @@ class KineticsDisplayItem(QtGui.QGraphicsWidget):
     def __init__(self, mooseObject, parent=None):
         QtGui.QGraphicsObject.__init__(self,parent)
         self.mobj = mooseObject
+        self.mid  = mooseObject.__hash__()
         # self.moose = instance["moose"]
         # self.modle = instance["model"]
         self.gobj = None

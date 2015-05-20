@@ -36,30 +36,30 @@ def getColor(iteminfo,moose):
     if(textcolor == ''): textcolor = 'green'
     if(bgcolor == ''): bgcolor = 'blue'
     if(textcolor == bgcolor):textcolor = getRandColor()
-    textcolor = colorCheck(textcolor,"fc")
-    bgcolor = colorCheck(bgcolor,"bg")
+    textcolor = colorCheck(textcolor)
+    bgcolor = colorCheck(bgcolor)
+    textcolor 
     return(textcolor,bgcolor)
 
-def colorCheck(fc_bgcolor,fcbg):
+def colorCheck(fc_bgcolor):
     """ textColor or background can be anything like string or tuple or list \
         if string its taken as colorname further down in validColorcheck checked for valid color, \
         but for tuple and list its taken as r,g,b value.
     """
-    if isinstance(fc_bgcolor,str):
-        if fc_bgcolor.startswith("#"):
-            fc_bgcolor = QColor(fc_bgcolor)
-        elif fc_bgcolor.isdigit():
-            """ color is int  a map from int to r,g,b triplets from pickled color map file """
-            tc = int(fc_bgcolor)
-            tc = 2*tc
-            pickledColor = colorMap[tc]
-            fc_bgcolor = QColor(*pickledColor)
-
-        elif fc_bgcolor.isalpha() or fc_bgcolor.isalnum():
-            fc_bgcolor = validColorcheck(fc_bgcolor)
-        else:
-            fc_bgcolor = QColor(*eval(fc_bgcolor))
-            # fc_bgcolor = validColorcheck(fc_bgcolor)
+    if fc_bgcolor.startswith("#"): 
+        fc_bgcolor = QColor(fc_bgcolor)
+    elif fc_bgcolor.isdigit():
+        """ color is int  a map from int to r,g,b triplets from pickled color map file """
+        tc = int(fc_bgcolor)
+        tc = 2*tc
+        pickledColor = colorMap[tc]
+        fc_bgcolor = QColor(*pickledColor)
+        
+    elif fc_bgcolor.isalpha() or fc_bgcolor.isalnum():
+        fc_bgcolor = validColorcheck(fc_bgcolor)
+    else:
+        fc_bgcolor = QColor(*eval(fc_bgcolor))
+        # fc_bgcolor = validColorcheck(fc_bgcolor)
     return(fc_bgcolor)
 
 def validColorcheck(color):
