@@ -1,0 +1,31 @@
+{
+	"build_systems":
+	[
+		{
+			"cmd":
+			[
+				"python",
+				"setup.py",
+				"develop",
+				"--uninstall"
+			],
+			"name": "goose-uninstall"
+		},
+		{
+			"cmd":
+			[
+				"python",
+				"setup.py",
+				"develop"
+			],
+			"name": "goose-install"
+		}
+	],
+	"folders":
+	[
+		{
+			"follow_symlinks": true,
+			"path": "/home/aviral/Projects/harsha-goose-2"
+		}
+	]
+}

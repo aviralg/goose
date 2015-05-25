@@ -8,14 +8,17 @@ import socket
 import errno
 import itertools
 import widgets
+from .utils import *
 from widgets import *
 import imp
-from utils import *
+from .utils import *
 from PyQt4 import Qt, QtCore, QtGui
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 import signal
-from scheduler import SchedulingWidget
+from scheduler import SimulationToolBar
+import atexit
+import signal
 # import widgets
 # from widgets import kkit
 # from widgets.kkit.kkit import KineticsWidget
@@ -27,8 +30,14 @@ from objectedit import ObjectEditDockWidget
 
 
 class MainWindow(QMainWindow):
-    simulation_run = pyqtSignal()
-    signals = { "pre"  :   { "connect"     :   pyqtSignal()
+    simulation_run          = pyqtSignal()
+    simulation_start        = pyqtSignal()
+    simulation_run          = pyqtSignal()
+    simulation_pause        = pyqtSignal()
+    simulation_run          = pyqtSignal()
+    simulation_stopped      = pyqtSignal()
+
+    signals = { "pre"   :       { "connect"     :   pyqtSignal()
                                 , "quit"        :   pyqtSignal()
                                 , "fullscreen"  :   { "enable"  :   pyqtSignal()
                                                     , "disable" :   pyqtSignal()
@@ -84,6 +93,13 @@ class MainWindow(QMainWindow):
         self.instances      = {}
         self.instance       = None
         self._application = application
+        self.message_box    = QMessageBox(self)
+        self.message_box.setStandardButtons(QMessageBox.NoButton)
+        flags = self.message_box.windowFlags()
+        if Qt.WindowCloseButtonHint == (flags & Qt.WindowCloseButtonHint):
+            flags = flags ^ Qt.WindowCloseButtonHint
+            self.message_box.setWindowFlags(flags |  Qt.FramelessWindowHint)
+        atexit.register(self.stop_moose_servers)
         self._setup_global_widgets()
         self._setup_main_window()
         self._setup_central_widget()
@@ -94,6 +110,15 @@ class MainWindow(QMainWindow):
         self._application.aboutToQuit.connect(self.stop_moose_servers)
         self._setup_toolbars()
         [self.load_slot(model) for model in models]
+
+    @QtCore.pyqtSlot(str)
+    def busy_slot(self, message = DEFAULT_MESSAGE):
+        self.message_box.setText(message)
+        self.message_box.show()
+
+    @QtCore.pyqtSlot()
+    def free_slot(self):
+        self.message_box.hide()
 
     def _setup_global_widgets(self):
         self._console = QDockWidget(self)
@@ -118,6 +143,7 @@ class MainWindow(QMainWindow):
                            | QtCore.Qt.CustomizeWindowHint
                            | QtCore.Qt.WindowMinimizeButtonHint
                            | QtCore.Qt.WindowMaximizeButtonHint
+                           # | QtCore.Qt.WindowStaysOnTopHint
                            )
         self.setDockOptions( QMainWindow.AnimatedDocks
                            | QMainWindow.AllowNestedDocks
@@ -132,7 +158,7 @@ class MainWindow(QMainWindow):
         self._property_editor.setObject(path, moose)
 
     def _setup_toolbars(self):
-        # self.addToolBar(SchedulingWidget(slots = self._slots))
+        self.addToolBar(SimulationToolBar(slots = self._slots, parent = self))
         pass
 
     def _setup_central_widget(self):
@@ -465,7 +491,9 @@ class MainWindow(QMainWindow):
                                    , mainWindow = self
                                    )
             self.centralWidget().addSubWindow(widget)
+            self.free_slot()
             widget.show()
+
             # widget.show()
 
             # widget = KineticsWidget( self.instance
@@ -498,6 +526,7 @@ class MainWindow(QMainWindow):
         widget.show()
 
     def load_slot(self, filename):
+        self.busy_slot()
         (host, port, pid) = self.start_moose_server()
         self.connect_to_moose_server(host, port, pid, filename)
 
@@ -506,10 +535,12 @@ class MainWindow(QMainWindow):
         self.stop_moose_servers()
 
     def stop_moose_servers(self):
-        for modelname, info in self.instances.items():
+        for modelname in self.instances.keys():
+            info = self.instances.pop(modelname)
             info["thread"].stop()
             INFO("Closing Moose server on " + info["host"] + ":" + str(info["port"]))
             os.kill(info["pid"], signal.SIGTERM)
+        self.instance = None
 
         # unique_modelname(model)
 
@@ -574,8 +605,10 @@ class MainWindow(QMainWindow):
                  , plot_type
                  , color
                  ):
+
         menu = QMenu()
-        for widget in self.get_plot_widgets(fields):
+        print("Hi =>", moose_object)
+        for widget in self.get_plot_widgets(moose_object, fields):
             action = menu.addAction(
                 "{title} ({field})".format( title = widget.get_title()
                                           , field = FIELD_DATA[widget.get_field()]["name"]
@@ -587,20 +620,23 @@ class MainWindow(QMainWindow):
         for field in fields:
             action = new_plot_menu.addAction(FIELD_DATA[field]["name"])
             action.triggered.connect( lambda x, f = field: self.create_plot_widget( moose_object
-                                                                      , f
-                                                                      , plot_type
-                                                                      , color
-                                                                      )
+                                                                                  , f
+                                                                                  , plot_type
+                                                                                  , color
+                                                                                  )
                                     )
         menu.exec_(position)
 
     @QtCore.pyqtSlot(str, list)
-    def get_plot_widgets(self, fields = ALL_FIELDS):
+    def get_plot_widgets(self, moose_object = None, fields = ALL_FIELDS):
         widgets = []
         for subWindow in self.centralWidget().subWindowList():
             widget = subWindow.widget()
             if isinstance(widget, PlotWidget) and widget.get_field() in fields:
-                widgets.append(widget)
+                if moose_object is None:
+                    widgets.append(widget)
+                elif not widget.exists(moose_object):
+                    widgets.append(widget)
         return widgets
 
     @pyqtSlot(object)
@@ -638,8 +674,6 @@ class MainWindow(QMainWindow):
         # menus["file"].addAction(createFileOpenAction)
         # # fullscreen.triggered.connect(self.showFullScreen)
         # return (menubar, menus)
-
-
 
 
 def portgen(self):

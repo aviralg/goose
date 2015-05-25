@@ -85,24 +85,30 @@ FIELD_DATA   =   { CONCENTRATION        :   { "name"        :   "Concentration"
                                             , "moose_field" :   "getConc"
                                             , "unit"        :   "mM"
                                             , "table"       :   "Table2"
+                                            , "message"     :   "getConc"
                                             }
                  , MOLECULES            :   { "name"        :   "Molecules"
                                             , "moose_field" :   "getN"
                                             , "unit"        :   None
                                             , "table"       :   "Table2"
+                                            , "message"     :   "getN"
                                             }
                  , MEMBRANE_VOLTAGE     :   { "name"        :   "Concentration"
                                             , "moose_field" :   "getVm"
                                             , "unit"        :   "mV"
                                             , "table"       :   "Table"
+                                            , "message"     :   "getVm"
                                             }
                  , MEMBRANE_CURRENT     :   { "name"        :   "Membrane Current"
                                             , "moose_field" :   "getIm"
                                             , "unit"        :   "mA"
                                             , "table"       :   "Table"
+                                            , "message"     :   "getIm"
                                             }
                  , TIME                 :   { "name"        :   "Time"
                                             , "moose_field" :   "getTime"
                                             , "unit"        :   "s"
                                             }
                  }
+
+DEFAULT_MESSAGE = "Please wait while the model is being loaded"

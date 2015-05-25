@@ -26,7 +26,7 @@ class PlotWidget(QWidget):
                 , facecolor     = ""
                 , legend_alpha  = 0.5
                 ):
-        QWidget.__init__(self)
+        QWidget.__init__(self, parent = parent)
         self.instance       = instance
         self.moose          = instance["moose"]
         self.container      = container
@@ -44,16 +44,18 @@ class PlotWidget(QWidget):
         self._setup_actions()
         self._setup_context_menu()
         self._setup_signal_slot_connections()
+        self._setup_container()
         self._setup_postlude()
         # self.remove()
 
-
-    # def _read_tables(self):
-    #     for table in self.container.children():
-    #         object_name = table.neighbors["requestOut"][0][0].name
-    #         field       = table["neighbors"][]
-
-
+    def _setup_container(self):
+        for table in self.container.children:
+            label = table[0].neighbors["requestOut"][0][0].name
+            # field       = MOOSE_FIELD_TO_FIELD[]
+            # field = table[0].neighbors["requestOut"][0][0]
+            self._create_line( table[0]
+                             , table[0].neighbors["requestOut"][0][0]
+                             )
 
     def get_title(self):
         return self.axes.get_title()
@@ -65,19 +67,28 @@ class PlotWidget(QWidget):
     def get_field(self):
         return self.field
 
-    def add(self, moose_object, color = AUTOMATIC):
-        table_name = self._object_path_to_table_name(moose_object.path)
-        table_path = self.container.path + "/" + table_name
-        if self.moose.exists(table_path): return
-        table = self.create_table(table_path)
+    def _create_line(self, table, moose_object, color = AUTOMATIC):
         line = self.axes.plot( numpy.array([])
                              , numpy.array([])
                              , label = moose_object.name
-                             , gid   = table_name
+                             , gid   = table.name
                              )[0]
-        print(color)
         if color is not AUTOMATIC : line.set_color(color)
         self._create_legend()
+
+    def exists(self, moose_object):
+        print(self.container.children)
+        for table in self.container.children:
+            if moose_object in table[0].msgDests["requestOut"]:
+                return True
+        return False
+
+    def add(self, moose_object, color = AUTOMATIC):
+        if self.exists(moose_object) : return
+        table_name = self._object_path_to_table_name(moose_object.path)
+        table_path = self.container.path + "/" + table_name
+        table = self.create_table(table_path, moose_object)
+        self._create_line(table, moose_object, color = color)
 
     def _setup_prelude(self):
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
@@ -262,8 +273,14 @@ class PlotWidget(QWidget):
     #     y_field =
     #     return  [self._y_field()]
 
-    def create_table(self, table_path):
-        return self.moose.__dict__[FIELD_DATA[self.field]["table"]](table_path)
+    def create_table(self, table_path, moose_object):
+        table = self.moose.__dict__[FIELD_DATA[self.field]["table"]](table_path)
+        self.moose.connect( table
+                          , 'requestOut'
+                          , moose_object
+                          , FIELD_DATA[self.field]["message"]
+                          )
+        return table
 
     def remove_plot(self):
         pass

@@ -23,10 +23,10 @@ GOOSE_LOG_DIRECTORY = os.path.join( GOOSE_ROOT_DIRECTORY
                                   , GOOSE_RUN_TIME
                                   )
 
-def excepthook(exception_class, exception, tb):
-    CRITICAL('{0}: {1}'.format(exception_class.__name__, exception))
-    CRITICAL("\n" + "".join(traceback.format_tb(tb)))
-    sys.exit()
+# def excepthook(exception_class, exception, tb):
+#     CRITICAL('{0}: {1}'.format(exception_class.__name__, exception))
+#     CRITICAL("\n" + "".join(traceback.format_tb(tb)))
+#     sys.exit()
 
 def moose_exists():
     try:
@@ -36,7 +36,7 @@ def moose_exists():
         return False
 
 def main():
-    sys.excepthook = excepthook
+    # sys.excepthook = excepthook
     if not os.path.exists(GOOSE_LOG_DIRECTORY):
         os.makedirs(GOOSE_LOG_DIRECTORY)
     application = QApplication(sys.argv)
@@ -52,7 +52,10 @@ installation before running me."""
         sys.exit(0)
     window =  MainWindow(application, GOOSE_LOG_DIRECTORY ,sys.argv[1:])
     window.setWindowState(QtCore.Qt.WindowMaximized)
-    signal.signal(signal.SIGINT, lambda * args : window.quit_slot() )
+    # signal.signal(signal.SIGINT, lambda * args : window.quit_slot() )
+    signal.signal(signal.SIGINT, window.stop_moose_servers)
+    signal.signal(signal.SIGTERM, window.stop_moose_servers)
+
     window.show()
 
     sys.exit(application.exec_())
