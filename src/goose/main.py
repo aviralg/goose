@@ -473,18 +473,19 @@ class MainWindow(QMainWindow):
             #                        )
             # self.centralWidget().addSubWindow(widget1)
             # widget1.show()
-            # widget2 = KineticsWidget( self.instance
-            #                        , elecCompt = self.instance["moose"].element("/model/elec/head1")
-            #                        , voxelIndex = 1,mainWindow = self,multiScale=True
-            #                        )
-            # self.centralWidget().addSubWindow(widget2)
-            # widget2.show()
+            widget2 = KineticsWidget( self.instance
+                                   , elecCompt = self.instance["moose"].element("/model/elec/head1")
+                                   , voxelIndex = 1,mainWindow = self,multiScale=True
+                                   )
+            self.centralWidget().addSubWindow(widget2)
+            widget2.show()
             # self.kkit_slot( "/model[0]/elec[0]/apical_f_113_0[0]"
             #               , 3452
             #               )
             # widget = PlotWidget(self.instance, "/model/graphs", "Conc")
             # self.centralWidget().addSubWindow(widget)
             # widget.show()
+<<<<<<< HEAD
             widget = KineticsWidget( self.instance
                                    , elecCompt = self.instance["moose"].element("/model[0]/elec[0]/dend_f_3_0[0]")
                                    , voxelIndex = 17
@@ -494,6 +495,17 @@ class MainWindow(QMainWindow):
             self.free_slot()
             widget.show()
 
+=======
+            #moose.le('/model/elec/')
+            # widget = KineticsWidget( self.instance
+            #                        , elecCompt = self.instance["moose"].element("/model[0]/elec[0]/apical_f_88_1")
+            #                        , voxelIndex = 17
+            #                        , mainWindow = self
+            #                        , multiScale = True
+            #                        )
+            # self.centralWidget().addSubWindow(widget)
+            # widget.show()
+>>>>>>> 10a73ee618dcac86c01be1b535d32bba9cf5b3c0
             # widget.show()
 
             # widget = KineticsWidget( self.instance

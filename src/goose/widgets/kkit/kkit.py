@@ -280,7 +280,7 @@ class  KineticsWidget(QtGui.QWidget):
         self.psdMesh   = None
         self.spineMesh = None
         self.mesh = []
-        print " KineticsWidget"
+        print " KineticsWidget", self.multiScale
         if self.elecCompt is not None:
             self.neuroMesh = self.moose.wildcardFind(self.modelRoot + "/##[ISA=NeuroMesh]")[0]
             self.spineMesh = self.moose.wildcardFind(self.modelRoot + "/##[ISA=SpineMesh]")[0]
@@ -433,7 +433,9 @@ class  KineticsWidget(QtGui.QWidget):
             for t in self.comptList:
                 self.mesh.append((t,0))
             self.m = self.mesh
-        if self.m:
+        if not self.m:
+            CRITICAL("Compartment list is empty")
+        elif self.m:
             self.xmin = 0.0
             self.xmax = 1.0
             self.ymin = 0.0
@@ -540,15 +542,9 @@ class  KineticsWidget(QtGui.QWidget):
         for cmpt,memb in self.meshEntry.items():
             cmpt = cmpt[0]
             for poolObj in find_index(memb,'pool'):
-                if poolObj.getDataIndex > 0:
-                    poolPath = poolObj.path[0:poolObj.path.rfind('[')]
-                    poolInfo =poolPath+'/info'
-                else:
-                    poolInfo = poolObj.path+'/info'
-                # DEBUG(poolObj)
-                # DEBUG(self.qGraCompt)
-                #depending on Editor Widget or Run widget pool will be created a PoolItem or PoolItemCircle
-                #poolItem = self.makePoolItem(poolObj,self.qGraCompt[cmpt])
+                # multiscale zeroth Voxel has x,y,color,bgcolor info and only pool have different
+                # voxel index.When accessing any information for Pool it has to be zeroth Voxel index
+                poolInfo = poolObj.vec[0].path+'/info'
                 poolItem = self.makePoolItem(poolObj,self.qGraCompt[cmpt])
                 self.mooseId_GObj[self.moose.element(poolObj.getId())] = poolItem
                 self.setupDisplay(poolInfo,poolItem,"pool")
@@ -756,12 +752,15 @@ class  KineticsWidget(QtGui.QWidget):
                                     if isinstance(self.moose.element(items),self.moose.Function):
                                         test = self.moose.element(items.path+'/x')
                                         for i in self.moose.element(test).neighbors['input']:
+                                            print " i ",i
                                             j = self.mooseId_GObj[self.moose.element(i)]
                                             self.updateArrow(j)
                             self.updateArrow(rectChilditem)
         else:
-            # print " position changed ",mooseObject,self.moose.element(mooseObject)
-            mobj = self.mooseId_GObj[self.moose.element(mooseObject)]
+            #print " position changed ",mooseObject, self.mooseId_GObj, self.moose.element(mooseObject)
+            mId = self.moose.element(mooseObject.vec[0].path)
+            #print "#$#$ ",mId
+            mobj = self.mooseId_GObj[mId]
             self.updateArrow(mobj)
             elePath = self.moose.element(mooseObject).path
             pos = elePath.find('/',1)
@@ -938,8 +937,8 @@ class kineticRunWidget(KineticsWidget):
     def changeBgSize(self):
         for item in self.sceneContainer.items():
             if isinstance(item,PoolItemCircle):
-                initialConc = moose.element(item.mobj).concInit
-                presentConc = moose.element(item.mobj).conc
+                initialConc = simulaton_data["chemical"][item.mid]["concInit"]
+                presentConc = simulaton_data["chemical"][item.mid]["conc"]
                 if initialConc != 0:
                     ratio = presentConc/initialConc
                 else:
