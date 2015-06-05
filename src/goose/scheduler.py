@@ -3,6 +3,8 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from utils import *
 import time
+import json
+from goose.signals import *
 
 # simulation_data = { "tables"        : { "container_path"    :   { "table_name" : data
 #                                                                 , "table_name" : data
@@ -21,13 +23,14 @@ import time
 #                                                         , "im"      : im
 #                                                         }
 #                                       }
-#                   , "time"          : {}
+#                   , "time"          : {
+#                                       }
 #                   }
 
 class SimulationToolBar(QToolBar):
     """docstring for SimulationToolBar"""
 
-    def __init__(self, parent, slots = {}):
+    def __init__(self, parent):
         super(SimulationToolBar, self).__init__(parent)
         self.setFloatable(False)
         self.setMovable(False)
@@ -41,11 +44,8 @@ class SimulationToolBar(QToolBar):
         # self._slots         = slots
         self._last_pressed_action = None
         self._setup_actions()
-        self.simulation_data = { "time"         : 0.0
-                               , "chemical"     : {}
-                               , "electrical"   : {}
-                               }
-
+        self.simulation_data = None
+        self.plots = []
 
     def replace_action(self, old_action, new_action):
         self.insertAction(old_action, new_action)
@@ -63,13 +63,24 @@ class SimulationToolBar(QToolBar):
         self.replace_action(self._pause_action, self._run_action)
 
     def print_simulation_data(self):
-        import pprint
-        pprint.pprint("Printing => " + str(self.simulation_data["time"]))
+        print("Emitting Update Signal")
+        for plot in self.plots:
+            plot.update_plots_slot(self.simulation_data)
+            print("Updated => " + str(plot))
+        # self.parent().simulation_run.emit(self.simulation_data)
+        print("Emitted Update Signal")
 
     def print_on_console(self, simulation_data):
-        try:
-            print("Called")
-            self.simulation_data = copy.deepcopy(simulation_data)
+            # print("Called")
+            # self.simulation_data["time"] = simulation_data["time"]
+            # for key, value in simulation_data["chemical"].items():
+            #     self.simulation_data["chemical"][int(key)] = { "concInit"    : value["concInit"]
+            #                                                  , "conc"        : value["conc"]
+            #                                                  , "n"           : value["n"]
+            #                                                  , "nInit"       : value["nInit"]
+            #                                                  , "path"        : value["path"]
+            #                                                  }
+            # print("done")
         #     import copy
         #     for mid in simulation_data[]
         #     self.simulation_data = copy.deepcopy()
@@ -84,8 +95,14 @@ class SimulationToolBar(QToolBar):
         # # print("Hello")
         # # print(self.simulation_data)
         #     print("Done")
-        finally:
-            QTimer.singleShot(0, self.print_simulation_data)
+        self.simulation_data = json.loads(simulation_data)
+        print("Emitting Update Signal")
+        # for plot in self.plots:
+        #     plot.update_plots_slot(self.simulation_data)
+        #     print("Updated => " + str(plot))
+
+        self.parent().simulation_run.emit(self.simulation_data)
+        print("Emitted Update Signal")
 
         # if self.tables is None:
         #     self.tables = self.parent().instance["moose"].wildcardFind("/##[ISA=Table2]")
@@ -102,14 +119,14 @@ class SimulationToolBar(QToolBar):
     def _setup_actions(self):
         self._start_action  = QAction(self)
         self._start_action.setIcon(QIcon(RUN_SIMULATION_ICON_PATH))
-        self._start_action.triggered.connect(lambda _ : self.parent().instance["service"].run_simulation())
+        self._start_action.triggered.connect(lambda _ : self.parent().instance["service"].exposed_run_simulation2())
         self.addAction(self._start_action)
         # self._resume_action = QAction("Resume Simulation")
         # self._pause_action  = QAction("Pause Simulation")
         self._reset_action  = QAction(self)
         self._reset_action.setIcon(QIcon(RESET_SIMULATION_ICON_PATH))
         self._reset_action.triggered.connect(
-            lambda _ : self.parent().instance["service"].initialize_simulation( 5e-3
+            lambda _ : self.parent().instance["service"].initialize_simulation( 5.0
                                                                               , self.print_on_console
                                                                               )
                                             )

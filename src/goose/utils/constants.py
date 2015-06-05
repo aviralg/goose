@@ -71,15 +71,21 @@ SCATTER_PLOT        = "SCATTER PLOT"
 
 TIME                = "TIME"
 CONCENTRATION       = "CONCENTRATION"
-MOLECULES           = "MOLECULES"
+N           = "N"
 MEMBRANE_VOLTAGE    = "MEMBRANE VOLTAGE"
 MEMBRANE_CURRENT    = "MEMBRANE CURRENT"
 
 ALL_FIELDS = [ CONCENTRATION
-             , MOLECULES
+             , N
              , MEMBRANE_VOLTAGE
              , MEMBRANE_CURRENT
              ]
+
+REVERSE_FIELD_DATA = { "getConc" : CONCENTRATION
+                     , "getN"    : N
+                     , "getVm"   : MEMBRANE_VOLTAGE
+                     , "getIm"   : MEMBRANE_CURRENT
+                     }
 
 FIELD_DATA   =   { CONCENTRATION        :   { "name"        :   "Concentration"
                                             , "moose_field" :   "getConc"
@@ -87,9 +93,9 @@ FIELD_DATA   =   { CONCENTRATION        :   { "name"        :   "Concentration"
                                             , "table"       :   "Table2"
                                             , "message"     :   "getConc"
                                             }
-                 , MOLECULES            :   { "name"        :   "Molecules"
+                 , N                   :    { "name"        :   "N"
                                             , "moose_field" :   "getN"
-                                            , "unit"        :   None
+                                            , "unit"        :    None
                                             , "table"       :   "Table2"
                                             , "message"     :   "getN"
                                             }

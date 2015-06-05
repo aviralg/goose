@@ -19,6 +19,7 @@ import signal
 from scheduler import SimulationToolBar
 import atexit
 import signal
+from signals import *
 # import widgets
 # from widgets import kkit
 # from widgets.kkit.kkit import KineticsWidget
@@ -30,62 +31,60 @@ from objectedit import ObjectEditDockWidget
 
 
 class MainWindow(QMainWindow):
-    simulation_run          = pyqtSignal()
-    simulation_start        = pyqtSignal()
-    simulation_run          = pyqtSignal()
-    simulation_pause        = pyqtSignal()
-    simulation_run          = pyqtSignal()
-    simulation_stopped      = pyqtSignal()
+    simulation_start    = pyqtSignal(object)
+    simulation_run      = pyqtSignal(object)
+    simulation_pause    = pyqtSignal(object)
+    simulation_stop     = pyqtSignal(object)
 
-    signals = { "pre"   :       { "connect"     :   pyqtSignal()
-                                , "quit"        :   pyqtSignal()
-                                , "fullscreen"  :   { "enable"  :   pyqtSignal()
-                                                    , "disable" :   pyqtSignal()
-                                                    }
-                                , "menubar"     :   { "show"    :   pyqtSignal()
-                                                    , "hide"    :   pyqtSignal()
-                                                    }
-                                , "windows"     :   { "tile"    :   pyqtSignal()
-                                                    , "tabify"  :   pyqtSignal()
-                                                    }
-                                , "model"       :   { "open"        :   pyqtSignal(str)
-                                                    , "close"       :   pyqtSignal(str)
-                                                    , "create"      :   pyqtSignal(str)
-                                                    , "add"         :   pyqtSignal(str, str)
-                                                    , "remove"      :   pyqtSignal(str, str, str)
-                                                    , "move"        :   pyqtSignal(str, str, str)
-                                                    , "run"         :   pyqtSignal(int, int)
-                                                    , "pause"       :   pyqtSignal(int, int)
-                                                    , "stop"        :   pyqtSignal(int, int)
-                                                    , "data"        :   pyqtSignal(dict)
-                                                    }
-                                }
-              , "post"  :   { "new"         :   pyqtSignal()
-                            , "open"        :   pyqtSignal()
-                            , "connect"     :   pyqtSignal()
-                            , "quit"        :   pyqtSignal()
-                            , "fullscreen"  :   { "enable"  :   pyqtSignal()
-                                                , "disable" :   pyqtSignal()
-                                                }
-                            , "menubar"     :   { "show"    :   pyqtSignal()
-                                                , "hide"    :   pyqtSignal()
-                                                }
-                            , "windows"     :   { "tile"    :   pyqtSignal()
-                                                , "tabify"  :   pyqtSignal()
-                                                }
-                            , "model"       :   { "load"        :   pyqtSignal(str)
-                                                , "delete"      :   pyqtSignal(str)
-                                                , "add"         :   pyqtSignal(str, str)
-                                                , "remove"      :   pyqtSignal(str, str, str)
-                                                , "move"        :   pyqtSignal(str, str, str)
-                                                , "run"         :   pyqtSignal(object)
-                                                , "pause"       :   pyqtSignal(int, int)
-                                                , "stop"        :   pyqtSignal(int, int)
-                                                , "data"        :   pyqtSignal(dict)
-                                                }
-                            }
-              }
-    signals["post"]["model"]["run"] = pyqtSignal(object)
+    # signals = { "pre"   :       { "connect"     :   pyqtSignal()
+    #                             , "quit"        :   pyqtSignal()
+    #                             , "fullscreen"  :   { "enable"  :   pyqtSignal()
+    #                                                 , "disable" :   pyqtSignal()
+    #                                                 }
+    #                             , "menubar"     :   { "show"    :   pyqtSignal()
+    #                                                 , "hide"    :   pyqtSignal()
+    #                                                 }
+    #                             , "windows"     :   { "tile"    :   pyqtSignal()
+    #                                                 , "tabify"  :   pyqtSignal()
+    #                                                 }
+    #                             , "model"       :   { "open"        :   pyqtSignal(str)
+    #                                                 , "close"       :   pyqtSignal(str)
+    #                                                 , "create"      :   pyqtSignal(str)
+    #                                                 , "add"         :   pyqtSignal(str, str)
+    #                                                 , "remove"      :   pyqtSignal(str, str, str)
+    #                                                 , "move"        :   pyqtSignal(str, str, str)
+    #                                                 , "run"         :   pyqtSignal(int, int)
+    #                                                 , "pause"       :   pyqtSignal(int, int)
+    #                                                 , "stop"        :   pyqtSignal(int, int)
+    #                                                 , "data"        :   pyqtSignal(dict)
+    #                                                 }
+    #                             }
+    #           , "post"  :   { "new"         :   pyqtSignal()
+    #                         , "open"        :   pyqtSignal()
+    #                         , "connect"     :   pyqtSignal()
+    #                         , "quit"        :   pyqtSignal()
+    #                         , "fullscreen"  :   { "enable"  :   pyqtSignal()
+    #                                             , "disable" :   pyqtSignal()
+    #                                             }
+    #                         , "menubar"     :   { "show"    :   pyqtSignal()
+    #                                             , "hide"    :   pyqtSignal()
+    #                                             }
+    #                         , "windows"     :   { "tile"    :   pyqtSignal()
+    #                                             , "tabify"  :   pyqtSignal()
+    #                                             }
+    #                         , "model"       :   { "load"        :   pyqtSignal(str)
+    #                                             , "delete"      :   pyqtSignal(str)
+    #                                             , "add"         :   pyqtSignal(str, str)
+    #                                             , "remove"      :   pyqtSignal(str, str, str)
+    #                                             , "move"        :   pyqtSignal(str, str, str)
+    #                                             , "run"         :   pyqtSignal(object)
+    #                                             , "pause"       :   pyqtSignal(int, int)
+    #                                             , "stop"        :   pyqtSignal(int, int)
+    #                                             , "data"        :   pyqtSignal(dict)
+    #                                             }
+    #                         }
+    #           }
+    # signals["post"]["model"]["run"] = pyqtSignal(object)
 
     def __init__(self, application, goose_log_directory, models):
         super(MainWindow, self).__init__()
@@ -158,7 +157,8 @@ class MainWindow(QMainWindow):
         self._property_editor.setObject(path, moose)
 
     def _setup_toolbars(self):
-        self.addToolBar(SimulationToolBar(slots = self._slots, parent = self))
+        self._simulation_toolbar = SimulationToolBar(parent = self)
+        self.addToolBar(self._simulation_toolbar)
         pass
 
     def _setup_central_widget(self):
@@ -268,7 +268,7 @@ class MainWindow(QMainWindow):
                                             , "stop"    :   self._stop_simulation
                                             }
                       }
-        self.simulation_run.connect(self.print_simulation_data)
+        # self.simulation_run.connect(self.print_simulation_data)
         self.open_action.triggered.connect(self.open_slot)
         self.quit_action.triggered.connect(self._application.exit)
         self.connect_action.triggered.connect(self.connect_slot)
@@ -373,9 +373,6 @@ class MainWindow(QMainWindow):
         pid = subprocess.Popen(args).pid
         return (host, port, pid)
 
-
-
-
         # connection = rpyc.classic.connect("0.0.0.0", port, keepalive = True)
         # INFO("Connected to moose server on port " + str(port))
         # return connection
@@ -473,29 +470,44 @@ class MainWindow(QMainWindow):
             #                        )
             # self.centralWidget().addSubWindow(widget1)
             # widget1.show()
-            widget2 = KineticsWidget( self.instance
-                                   , elecCompt = self.instance["moose"].element("/model/elec/head1")
-                                   , voxelIndex = 1,mainWindow = self,multiScale=True
-                                   )
-            self.centralWidget().addSubWindow(widget2)
-            widget2.show()
+            # widget2 = KineticsWidget( self.instance
+            #                        , elecCompt = self.instance["moose"].element("/model/elec/head1")
+            #                        , voxelIndex = 1,mainWindow = self,multiScale=True
+            #                        )
+            # self.centralWidget().addSubWindow(widget2)
+            # widget2.show()
             # self.kkit_slot( "/model[0]/elec[0]/apical_f_113_0[0]"
             #               , 3452
             #               )
             # widget = PlotWidget(self.instance, "/model/graphs", "Conc")
             # self.centralWidget().addSubWindow(widget)
             # widget.show()
-<<<<<<< HEAD
+# x.msgOut[0].destFieldsOnE2[0]
             widget = KineticsWidget( self.instance
-                                   , elecCompt = self.instance["moose"].element("/model[0]/elec[0]/dend_f_3_0[0]")
-                                   , voxelIndex = 17
+                                   , elecCompt = self.instance["moose"].element("/model/elec/apical_98_0")
+                                   , voxelIndex = 7
                                    , mainWindow = self
+                                   , multiScale = True
                                    )
             self.centralWidget().addSubWindow(widget)
-            self.free_slot()
             widget.show()
+            self._open_plot_widgets()
+            self.free_slot()
+            # for container in containers:
+            #     self.create_plot_widget( instance
+            #                            , container
+            #                            , CONCENTRATION
+            #                            , LINE_PLOT
+            #                            , AUTOMATIC
+            #                            )
 
-=======
+            # self.create_plot_widget( self.instance["moose"].element("/model/chem/spine/Ca_Spine")
+            #                        , CONCENTRATION
+            #                        , LINE_PLOT
+            #                        , AUTOMATIC
+            #                        )
+            # widget.show()
+
             #moose.le('/model/elec/')
             # widget = KineticsWidget( self.instance
             #                        , elecCompt = self.instance["moose"].element("/model[0]/elec[0]/apical_f_88_1")
@@ -505,7 +517,6 @@ class MainWindow(QMainWindow):
             #                        )
             # self.centralWidget().addSubWindow(widget)
             # widget.show()
->>>>>>> 10a73ee618dcac86c01be1b535d32bba9cf5b3c0
             # widget.show()
 
             # widget = KineticsWidget( self.instance
@@ -526,6 +537,30 @@ class MainWindow(QMainWindow):
                 raise serr
             DEBUG("Failed to connect to Moose server on " + host + ":" + str(port))
             QTimer.singleShot(1000, lambda : self.connect_to_moose_server(host, port, pid, filename))
+
+    # def detect_plot_field(self, container):
+    #     container.children[0].
+
+    def _open_plot_widgets(self):
+        tables = self.instance["moose"].wildcardFind("/##[ISA=Table2]")
+        containers = set(map(lambda x : x.parent, tables))
+        for container in containers:
+            field = REVERSE_FIELD_DATA[container.children[0][0].msgOut[0].destFieldsOnE2[0]]
+            plot_widget = LinePlotWidget( self.instance
+                                        , container
+                                        , field
+                                        , parent = self
+                                        )
+            plot_widget.set_title_slot(container.name)
+            plot_widget.setWindowTitle(
+                "{container_name} | {field}".format( container_name = container.name
+                                                   , field          = FIELD_DATA[field]["name"]
+                                                   )
+                                      )
+            self.centralWidget().addSubWindow(plot_widget)
+            plot_widget.show()
+            self._simulation_toolbar.plots.append(plot_widget)
+
 
     def kkit_slot(self, electrical_compartment_path, index):
         widget = KineticsWidget( self.instance
@@ -598,6 +633,7 @@ class MainWindow(QMainWindow):
             plot_widget = LinePlotWidget( self.instance
                                         , self.instance["moose"].Neutral(path)
                                         , field
+                                        , parent = self
                                         )
         plot_widget.set_title_slot("Plot {index}".format(index = index))
         plot_widget.setWindowTitle(
@@ -608,6 +644,8 @@ class MainWindow(QMainWindow):
         plot_widget.add(moose_object, color)
         self.centralWidget().addSubWindow(plot_widget)
         plot_widget.show()
+        self._simulation_toolbar.plots.append(plot_widget)
+        return plot_widget
 
     @QtCore.pyqtSlot(QPoint, object, str, str, str)
     def plot_slot( self

@@ -24,6 +24,7 @@ from rpyc.utils.registry import UDPRegistryClient, TCPRegistryClient
 from rpyc.utils.authenticators import SSLAuthenticator
 import time
 from threading import Thread
+import json
 
 logger = None
 
@@ -222,10 +223,11 @@ class MooseService(SlaveService):
         self.simulation_callback    = simulation_callback #rpyc.async(simulation_callback)
         self.simulation_dt          = 5e-5 #TODO : extract simulation_dt
         self.simulation_duration    = simulation_duration
-        self.simulation_paused      = True
+        self.simulation_paused      = False
         self.simulation_data        = { "time"         : 0.0
                                , "chemical"     : {}
                                , "electrical"   : {}
+                               , "tables"       : {}
                                }
 
         self.pools = moose.wildcardFind("/model/##[ISA=PoolBase]")
@@ -237,6 +239,11 @@ class MooseService(SlaveService):
                                                                 , "nInit"       : pool.nInit
                                                                 , "path"        : pool.path
                                                                 }
+        for table in moose.wildcardFind("/##[ISA=Table]") + moose.wildcardFind("/##[ISA=Table2]"):
+            if table.parent.path not in self.simulation_data["tables"]:
+                self.simulation_data["tables"][table.parent.path] = {}
+            self.simulation_data["tables"][table.parent.path][table.name] = list(table.vector)
+
         print("done")
         # self.b  = 0
         # self.a  = self.simulation_delta / self.expected_realtime
@@ -244,12 +251,15 @@ class MooseService(SlaveService):
         # self.y0 = self.simulation_delta
         moose.reinit()
 
-    def exposed_run_simulation(self):
+    def exposed_run_simulation2(self):
+        print("Started")
         self.simulation_paused = False
         self.thread = Thread( target    = self._run
                             , args      = ()
                             )
         self.thread.start()
+        print("returned control")
+        return
 
     def _run(self):
         while self._continue(): self._next()
@@ -259,15 +269,20 @@ class MooseService(SlaveService):
 
     def _next(self):
         # t1 = time.time()
+        print("Simulation started")
         moose.start(self.simulation_duration / 10.0)
-        print(moose.element("/clock").runTime)
-
+        print("Current Time => ", moose.element("/clock").runTime)
+        print("Copying Data")
         self.simulation_data["time"] = moose.element("/clock").runTime
         for pool in self.pools:
             self.simulation_data["chemical"][pool.__hash__()]["conc"] = pool.conc
             self.simulation_data["chemical"][pool.__hash__()]["n"]    = pool.n
-
-        self.simulation_callback(self.simulation_data)
+        for table in moose.wildcardFind("/##[ISA=Table]") + moose.wildcardFind("/##[ISA=Table2]"):
+            self.simulation_data["tables"][table.parent.path][table.name] = list(table.vector)
+        print("Copied Data")
+        print("Calling GUI Update Handler")
+        self.simulation_callback(json.dumps(self.simulation_data))
+        print("GUI Update Handler Returned")
         # self.x1 = time.time() - t1
         # self.y1 = self.y0
         # self._compute_next_simtime()

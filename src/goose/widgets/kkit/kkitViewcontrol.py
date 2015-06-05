@@ -330,7 +330,7 @@ class GraphicalView(QtGui.QGraphicsView):
                     color,bgcolor = getColor(info,self.moose)
                     self.mainWindow.plot_slot( QCursor.pos()
                                              , mooseElement
-                                             , [CONCENTRATION, MOLECULES]
+                                             , [CONCENTRATION, N]
                                              , LINE_PLOT
                                              , ( bgcolor.red() / 255.0
                                                , bgcolor.green() / 255.0

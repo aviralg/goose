@@ -13,6 +13,38 @@ from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as Naviga
 from matplotlib.figure import Figure
 import numpy
 from goose.utils import *
+from goose.signals import *
+
+
+# def spawn(container, main_window):
+#     """Detect existing tables and their connections.
+#        Group of tables holding the same value are graphed together
+#     """
+
+#     table_groups        = []
+#     standalone_tables   = []
+
+#     for tables in self.container.children:
+#         if len(tables.vec) == 1:
+
+
+#             table_groups.append(tables)
+#         else:
+#             standalone_tables.append(tables)
+
+#     for table_group in table_groups:
+#         plot_widget = LinePlotWidget(instance, container, field, parent)
+#         plot_widget._create_line
+
+#         for table in tables.vec:
+#                 label = table.neighbors["requestOut"][0][0].name
+#             # field       = MOOSE_FIELD_TO_FIELD[]
+#             # field = table[0].neighbors["requestOut"][0][0]
+#                 self._create_line( table
+#                                  , table.neighbors["requestOut"][0][0]
+#                                  )
+
+
 
 class PlotWidget(QWidget):
     def __init__( self
@@ -34,6 +66,8 @@ class PlotWidget(QWidget):
         self.figure_width   = figure_width
         self.figure_height  = figure_height
         self.dpi            = dpi
+        self.path           = str(self.container.path)
+        self.name           = str(self.container.name)
         self.grid_visible   = False
         self.legend_visible = True
         self.facecolor = facecolor
@@ -47,6 +81,21 @@ class PlotWidget(QWidget):
         self._setup_container()
         self._setup_postlude()
         # self.remove()
+
+
+    # def _add(self, table, index):
+    #     zorder  = index
+    #     gid     = table.name
+    #     label   = moose_object.name + "[" + str(index) + "]"
+    #     ydata   = numpy.array(table.vector)
+    #     xdata   = numpy.linspace( 0.0
+    #                             , self.moose.element("/clock").runtime
+    #                             , len(ydata)
+    #                             )
+    #     self._create_line(xdata, ydata, label, gid, zorder, color)
+
+    # def add(self, table):
+    #     for i in len(table.vec): self._add(table, i)
 
     def _setup_container(self):
         for table in self.container.children:
@@ -67,11 +116,12 @@ class PlotWidget(QWidget):
     def get_field(self):
         return self.field
 
-    def _create_line(self, table, moose_object, color = AUTOMATIC):
+    def _create_line(self, table, moose_object, color = AUTOMATIC, zorder = 0):
         line = self.axes.plot( numpy.array([])
                              , numpy.array([])
-                             , label = moose_object.name
-                             , gid   = table.name
+                             , label  = str(moose_object.name)
+                             , gid    = str(table.name)
+                             , zorder = zorder
                              )[0]
         if color is not AUTOMATIC : line.set_color(color)
         self._create_legend()
@@ -183,6 +233,7 @@ class PlotWidget(QWidget):
                     , self
                     , SLOT("show_context_menu_slot(QPoint)")
                     )
+        self.parent().simulation_run.connect(self.update_plots_slot)
 
     @QtCore.pyqtSlot()
     def draw_slot(self):
@@ -274,6 +325,7 @@ class PlotWidget(QWidget):
     #     return  [self._y_field()]
 
     def create_table(self, table_path, moose_object):
+        print(FIELD_DATA[self.field]["table"])
         table = self.moose.__dict__[FIELD_DATA[self.field]["table"]](table_path)
         self.moose.connect( table
                           , 'requestOut'
@@ -325,15 +377,23 @@ class PlotWidget(QWidget):
     def closeEvent(self, event):
         self.moose.delete(self.container.path)
 
-class LinePlotWidget(PlotWidget):
-
     @QtCore.pyqtSlot(object)
     def update_plots_slot(self, simdata):
+        print("Updating " + self.path)
+
+        # print(self.container.path)
+        # print simdata["tables"][self.container.path].keys()
+        # print("Updating plot")
         for line in self.axes.lines :
+            # print(line.get_gid())
+            # print simdata["tables"][self.container.path][line.get_gid()]
             self.update_plot_slot( line
-                                 , simdata["time"]["current"]
-                                 , simdata["tables"][line.get_gid()]
+                                 , simdata["time"]
+                                 , numpy.array(simdata["tables"][self.path][line.get_gid()])
                                  )
+        self.draw_slot()
+        print("Updated " + self.path)
+        # print("Updated plot")
 
     # @QtCore.pyqtSlot(Line2D, numpy.array, numpy.array)
     def update_plot_slot(self, line, simtime, ydata):
@@ -343,4 +403,9 @@ class LinePlotWidget(PlotWidget):
                               )
         line.set_xdata(xdata)
         line.set_ydata(ydata)
+
+
+
+class LinePlotWidget(PlotWidget):
+    pass
 
